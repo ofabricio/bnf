@@ -1,17 +1,8 @@
-# bnf
+package bnf_test
 
-Parse text using a BNF-like notation.
-
-**Note:** this is still in a very early, unusable state.
-
-## Example 1
-
-Parsing a simple expression. [Go Playground](https://go.dev/play/p/gHA4N-eIE2s)
-
-```go
 import "github.com/ofabricio/bnf"
 
-func main() {
+func Example_expr() {
 
 	theINP := `6+5*(4+3)*2`
 
@@ -29,25 +20,17 @@ func main() {
 
 	// Output:
 	// [Expr] +
-	//     [Iden] 6
+	//     [Ident] 6
 	//     [Expr] *
-	//         [Iden] 5
+	//         [Ident] 5
 	//         [Expr] *
 	//             [Expr] +
-	//                 [Iden] 4
-	//                 [Iden] 3
-	//             [Iden] 2
+	//                 [Ident] 4
+	//                 [Ident] 3
+	//             [Ident] 2
 }
-```
 
-## Example 2
-
-Parsing a simple Go function. [Go Playground](https://go.dev/play/p/KBGosjhQycX)
-
-```go
-import "github.com/ofabricio/bnf"
-
-func main() {
+func Example_group() {
 
 	theINP := `
 	    func Say(msg string) {
@@ -81,14 +64,3 @@ func main() {
 	//         [Ident] Println
 	//         [Ident] msg
 }
-```
-
-## Operators
-
-| Operator | Description |
-| --- | --- |
-| `'...'` | Match a plain text string. This emits a token. |
-| `R'...'` | The string is a Regular Expression. |
-| `I'...'` | Ignore the token (do not emit it). |
-| `EXPR1(a b c)` | Make the tokens `a b c` an expression where `b` will be the root token. |
-| `GROUP(a b c)` | Group the tokens `a b c`. |
