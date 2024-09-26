@@ -6,7 +6,7 @@ Parse text using a BNF-like notation.
 
 ## Example 1
 
-Parsing a simple expression. [Go Playground](https://go.dev/play/p/gHA4N-eIE2s)
+Parsing a simple expression. [Go Playground](https://go.dev/play/p/nxZDwYEy42G)
 
 ```go
 import "github.com/ofabricio/bnf"
@@ -25,7 +25,7 @@ func main() {
 	b := bnf.Compile(theBNF)
 	v := bnf.Parse(b, theINP)
 
-	bnf.Print(v, 0)
+	bnf.Print(v)
 
 	// Output:
 	// [Expr] +
@@ -42,7 +42,7 @@ func main() {
 
 ## Example 2
 
-Parsing a simple Go function. [Go Playground](https://go.dev/play/p/KBGosjhQycX)
+Parsing a simple Go function. [Go Playground](https://go.dev/play/p/v2VwFfrwPhl)
 
 ```go
 import "github.com/ofabricio/bnf"
@@ -67,7 +67,7 @@ func main() {
 	b := bnf.Compile(theBNF)
 	v := bnf.Parse(b, theINP)
 
-	bnf.Print(v, 0)
+	bnf.Print(v)
 
 	// Output:
 	// [Group]

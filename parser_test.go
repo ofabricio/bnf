@@ -20,7 +20,7 @@ func Example_expr() {
 	b := bnf.Compile(theBNF)
 	v := bnf.Parse(b, theINP)
 
-	bnf.Print(v, 0)
+	bnf.Print(v)
 
 	// Output:
 	// [Expr] +
@@ -54,7 +54,7 @@ func Example_group() {
 	b := bnf.Compile(theBNF)
 	v := bnf.Parse(b, theINP)
 
-	bnf.Print(v, 0)
+	bnf.Print(v)
 
 	// Output:
 	// [Group]
@@ -81,15 +81,15 @@ func ExampleFlatten() {
 	v := bnf.Parse(b, theINP)
 
 	fmt.Println("AST:")
-	bnf.Print(v, 0)
+	bnf.Print(v)
 	fmt.Println("FLATTEN 0:")
-	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 0)}, 0)
+	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 0)})
 	fmt.Println("FLATTEN 1:")
-	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 1)}, 0)
+	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 1)})
 	fmt.Println("FLATTEN 2:")
-	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 2)}, 0)
+	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 2)})
 	fmt.Println("FLATTEN 3:")
-	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 3)}, 0)
+	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 3)})
 
 	// Output:
 	// AST:
@@ -142,7 +142,7 @@ func Example_quantifier() {
 	b := bnf.Compile(theBNF)
 	v := bnf.Parse(b, theINP)
 
-	bnf.Print(v, 0)
+	bnf.Print(v)
 
 	// Output:
 	// [Group]

@@ -3,7 +3,6 @@ package bnf
 import (
 	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/ofabricio/scan"
 )
@@ -196,15 +195,18 @@ func (c *Compiler) ost() bool {
 	return c.st() || true
 }
 
-func Print(a AST, depth int) {
-	pad := strings.Repeat("    ", depth)
+func Print(a AST) {
+	print(a, "")
+}
+
+func print(a AST, pad string) {
 	if a.Text == "" {
 		fmt.Printf("%s[%s]\n", pad, a.Type)
 	} else {
 		fmt.Printf("%s[%s] %s\n", pad, a.Type, a.Text)
 	}
 	for _, n := range a.Next {
-		Print(n, depth+1)
+		print(n, pad+"    ")
 	}
 }
 

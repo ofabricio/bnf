@@ -25,7 +25,7 @@ func Example_all() {
 
 	v := bnf.Compile(s)
 
-	bnf.Print(v, 0)
+	bnf.Print(v)
 
 	// Output:
 	// [Root]
