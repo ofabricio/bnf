@@ -116,3 +116,24 @@ func (p *Parser) findStmt(id string) (AST, bool) {
 	}
 	return AST{}, false
 }
+
+// Flatten returns a flat list of nodes. The
+// depth parameter specifies the maximum depth
+// to flatten; zero flattens the entire tree.
+func Flatten(tree AST, depth int) []AST {
+	if depth <= 0 {
+		depth = -2
+	}
+	return flatten(tree, depth+1)
+}
+
+func flatten(tree AST, depth int) []AST {
+	if len(tree.Next) == 0 || depth == 0 {
+		return []AST{tree}
+	}
+	var f []AST
+	for _, n := range tree.Next {
+		f = append(f, flatten(n, depth-1)...)
+	}
+	return f
+}

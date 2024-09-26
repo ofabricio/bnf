@@ -1,6 +1,10 @@
 package bnf_test
 
-import "github.com/ofabricio/bnf"
+import (
+	"fmt"
+
+	"github.com/ofabricio/bnf"
+)
 
 func Example_expr() {
 
@@ -63,4 +67,65 @@ func Example_group() {
 	//         [Ident] .
 	//         [Ident] Println
 	//         [Ident] msg
+}
+
+func ExampleFlatten() {
+
+	theINP := `abcd`
+
+	theBNF := `
+	    root = GROUP( 'a' GROUP( 'b' GROUP( 'c' GROUP( 'd' ) ) ) )
+	`
+
+	b := bnf.Compile(theBNF)
+	v := bnf.Parse(b, theINP)
+
+	fmt.Println("AST:")
+	bnf.Print(v, 0)
+	fmt.Println("FLATTEN 0:")
+	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 0)}, 0)
+	fmt.Println("FLATTEN 1:")
+	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 1)}, 0)
+	fmt.Println("FLATTEN 2:")
+	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 2)}, 0)
+	fmt.Println("FLATTEN 3:")
+	bnf.Print(bnf.AST{Type: "Flatten", Next: bnf.Flatten(v, 3)}, 0)
+
+	// Output:
+	// AST:
+	// [Group]
+	//     [Ident] a
+	//     [Group]
+	//         [Ident] b
+	//         [Group]
+	//             [Ident] c
+	//             [Group]
+	//                 [Ident] d
+	// FLATTEN 0:
+	// [Flatten]
+	//     [Ident] a
+	//     [Ident] b
+	//     [Ident] c
+	//     [Ident] d
+	// FLATTEN 1:
+	// [Flatten]
+	//     [Ident] a
+	//     [Ident] b
+	//     [Group]
+	//         [Ident] c
+	//         [Group]
+	//             [Ident] d
+	// FLATTEN 2:
+	// [Flatten]
+	//     [Ident] a
+	//     [Ident] b
+	//     [Ident] c
+	//     [Group]
+	//         [Ident] d
+	// FLATTEN 3:
+	// [Flatten]
+	//     [Ident] a
+	//     [Ident] b
+	//     [Ident] c
+	//     [Ident] d
 }
