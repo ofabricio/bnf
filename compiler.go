@@ -81,9 +81,7 @@ func (c *Compiler) factor(expr *AST) bool {
 	if c.s.Match("(") && c.ost() && c.expr(expr) && c.ost() && c.s.Match(")") {
 		return true
 	}
-	var i AST
-	if c.value(&i) {
-		*expr = i
+	if c.value(expr) {
 		return true
 	}
 	return false
