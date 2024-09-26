@@ -62,7 +62,7 @@ func (c *Compiler) expr(expr *AST) bool {
 
 func (c *Compiler) term(expr *AST) bool {
 	var l, r AST
-	if c.qualifiedFactor(&l) {
+	if c.factor(&l) {
 		if c.st() && c.term(&r) {
 			*expr = AST{Type: "And", Next: []AST{l, r}}
 			return true
@@ -73,18 +73,8 @@ func (c *Compiler) term(expr *AST) bool {
 	return false
 }
 
-func (c *Compiler) qualifiedFactor(expr *AST) bool {
-	if c.factor(expr) {
-		var q AST
-		if c.quantifier(&q) {
-			*expr = AST{Type: "Quant", Text: q.Text, Next: []AST{*expr}}
-		}
-		return true
-	}
-	return false
-}
-
 func (c *Compiler) factor(expr *AST) bool {
+	defer c.quantifier(expr)
 	if c.function(expr) {
 		return true
 	}
@@ -127,11 +117,11 @@ func (c *Compiler) quantifier(q *AST) bool {
 	m := c.s.Mark()
 	c.ost()
 	if mm := c.s.Mark(); c.s.MatchChar("*+?") {
-		q.Text = c.s.Text(mm)
+		*q = AST{Type: "Quant", Text: c.s.Text(mm), Next: []AST{*q}}
 		return true
 	}
 	c.s.Move(m)
-	return false
+	return true
 }
 
 func (c *Compiler) value(v *AST) bool {

@@ -49,7 +49,7 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 				if !p.Parse(n, &v) {
 					return false
 				}
-				if v.Type != "" {
+				if !p.empty(v) {
 					g = append(g, v)
 				}
 			}
@@ -65,7 +65,7 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 			}
 			if v.Type == "And" {
 				and = append(and, v.Next...)
-			} else if v.Type != "" {
+			} else if !p.empty(v) {
 				and = append(and, v)
 			}
 		}
@@ -84,9 +84,14 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 		}
 	case "Quant":
 		c := 0
-		var v AST
-		for p.Parse(bnf.Next[0], &v) {
-			out.Next = append(out.Next, v)
+		for {
+			var v AST
+			if !p.Parse(bnf.Next[0], &v) {
+				break
+			}
+			if !p.empty(v) {
+				out.Next = append(out.Next, v)
+			}
 			c++
 		}
 		p.compact(out)
@@ -143,6 +148,10 @@ func (p *Parser) compact(out *AST) {
 	if len(out.Next) == 1 {
 		*out = out.Next[0]
 	}
+}
+
+func (p *Parser) empty(a AST) bool {
+	return len(a.Next)+len(a.Type) == 0
 }
 
 // Flatten returns a flat list of nodes. The
