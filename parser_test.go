@@ -129,3 +129,31 @@ func ExampleFlatten() {
 	//     [Ident] c
 	//     [Ident] d
 }
+
+func Example_quantifier() {
+
+	theINP := `a aa b bb c d`
+
+	theBNF := `
+	    root = 'a'+ s 'a'+ s 'a'* 'b'* s 'b'* s 'c'? s 'c'? 'd'
+           s = I' '
+	`
+
+	b := bnf.Compile(theBNF)
+	v := bnf.Parse(b, theINP)
+
+	bnf.Print(v, 0)
+
+	// Output:
+	// [Group]
+	//     [Ident] a
+	//     [Group]
+	//         [Ident] a
+	//         [Ident] a
+	//     [Ident] b
+	//     [Group]
+	//         [Ident] b
+	//         [Ident] b
+	//     [Ident] c
+	//     [Ident] d
+}

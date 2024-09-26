@@ -82,6 +82,25 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 			*out = v
 			return true
 		}
+	case "Quant":
+		c := 0
+		var v AST
+		for p.Parse(bnf.Next[0], &v) {
+			out.Next = append(out.Next, v)
+			c++
+		}
+		p.compact(out)
+		if len(out.Next) > 0 {
+			out.Type = "Group"
+		}
+		switch bnf.Text {
+		case "?":
+			return c <= 1
+		case "*":
+			return c >= 0
+		case "+":
+			return c > 0
+		}
 	case "Plain":
 		if p.s.Match(bnf.Text) {
 			out.Text = p.s.Text(m)
@@ -115,6 +134,15 @@ func (p *Parser) findStmt(id string) (AST, bool) {
 		}
 	}
 	return AST{}, false
+}
+
+// compact replaces the root node with the
+// child node when there is only one child
+// node.
+func (p *Parser) compact(out *AST) {
+	if len(out.Next) == 1 {
+		*out = out.Next[0]
+	}
 }
 
 // Flatten returns a flat list of nodes. The
