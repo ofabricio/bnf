@@ -48,7 +48,7 @@ func Example_group() {
 	    args = name ws name
 	    body = name '.' name '('i name ')'i
 	    name = '\w+'r
-	      ws = '\s+'ri
+	      ws = '\s*'ri
 	`
 
 	b := bnf.Compile(theBNF)
