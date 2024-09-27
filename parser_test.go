@@ -13,8 +13,8 @@ func Example_expr() {
 	theBNF := `
 	    expr   = EXPR1(term   '+' expr) | term
 	    term   = EXPR1(factor '*' term) | factor
-	    factor = I'(' expr I')' | value
-	    value  = R'\d+'
+	    factor = '('i expr ')'i | value
+	    value  = '\d+'r
 	`
 
 	b := bnf.Compile(theBNF)
@@ -44,11 +44,11 @@ func Example_group() {
 
 	theBNF := `
 	    root = ws func
-	    func = I'func' ws name I'(' args I')' ws I'{' ws body ws I'}'
+	    func = 'func'i ws name '('i args ')'i ws '{'i ws body ws '}'i
 	    args = name ws name
-	    body = name '.' name I'(' name I')'
-	    name = R'\w+'
-	      ws = IR'\s+'
+	    body = name '.' name '('i name ')'i
+	    name = '\w+'r
+	      ws = '\s+'ri
 	`
 
 	b := bnf.Compile(theBNF)
@@ -136,7 +136,7 @@ func Example_quantifier() {
 
 	theBNF := `
 	    root = 'a'+ s 'a'+ s 'a'* 'b'* s 'b'* s 'c'? s 'c'? 'd'
-           s = I' '
+           s = ' 'i
 	`
 
 	b := bnf.Compile(theBNF)

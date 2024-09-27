@@ -6,7 +6,7 @@ Parse text using a BNF-like notation.
 
 ## Example 1
 
-Parsing a simple expression. [Go Playground](https://go.dev/play/p/nxZDwYEy42G)
+Parsing a simple expression. [Go Playground](https://go.dev/play/p/w7o5Dtxw34I)
 
 ```go
 import "github.com/ofabricio/bnf"
@@ -18,8 +18,8 @@ func main() {
 	theBNF := `
 	    expr   = EXPR1(term   '+' expr) | term
 	    term   = EXPR1(factor '*' term) | factor
-	    factor = I'(' expr I')' | value
-	    value  = R'\d+'
+	    factor = '('i expr ')'i | value
+	    value  = '\d+'r
 	`
 
 	b := bnf.Compile(theBNF)
@@ -42,7 +42,7 @@ func main() {
 
 ## Example 2
 
-Parsing a simple Go function. [Go Playground](https://go.dev/play/p/v2VwFfrwPhl)
+Parsing a simple Go function. [Go Playground](https://go.dev/play/p/SbZMVXdzuHm)
 
 ```go
 import "github.com/ofabricio/bnf"
@@ -57,11 +57,11 @@ func main() {
 
 	theBNF := `
 	    root = ws func
-	    func = I'func' ws name I'(' args I')' ws I'{' ws body ws I'}'
+	    func = 'func'i ws name '('i args ')'i ws '{'i ws body ws '}'i
 	    args = name ws name
-	    body = name '.' name I'(' name I')'
-	    name = R'\w+'
-	      ws = IR'\s+'
+	    body = name '.' name '('i name ')'i
+	    name = '\w+'r
+	      ws = '\s+'ri
 	`
 
 	b := bnf.Compile(theBNF)
@@ -88,7 +88,7 @@ func main() {
 | Operator | Description |
 | --- | --- |
 | `'...'` | Match a plain text string. This emits a token. |
-| `R'...'` | The string is a Regular Expression. |
-| `I'...'` | Ignore the token (do not emit it). |
+| `'...'r` | The string is a Regular Expression. |
+| `'...'i` | Ignore the token (do not emit it). |
 | `EXPR1(a b c)` | Make the tokens `a b c` an expression where `b` will be the root token. |
 | `GROUP(a b c)` | Group the tokens `a b c`. |

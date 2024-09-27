@@ -112,7 +112,7 @@ func (c *Compiler) quantifier(out *AST) bool {
 }
 
 func (c *Compiler) value(out *AST) bool {
-	return c.text(out) || c.ident(out)
+	return c.ident(out) || c.text(out)
 }
 
 func (c *Compiler) ident(out *AST) bool {
@@ -124,22 +124,19 @@ func (c *Compiler) ident(out *AST) bool {
 }
 
 func (c *Compiler) text(out *AST) bool {
-	m := c.s.Mark()
-	ignore, regexp := c.s.Match("I"), c.s.Match("R")
 	if m := c.s.Mark(); c.regex(reText) {
 		t := c.s.Text(m)
 		t = t[1 : len(t)-1]
 		v := AST{Type: "Plain", Text: t}
-		if regexp {
-			v = AST{Type: "Regex", Text: "^" + v.Text}
+		if c.s.MatchChar("r") {
+			v = AST{Type: "Regex", Text: "^" + t}
 		}
-		if ignore {
+		if c.s.MatchChar("i") {
 			v = AST{Type: "Ignore", Next: []AST{v}}
 		}
 		*out = v
 		return true
 	}
-	c.s.Move(m)
 	return false
 }
 
