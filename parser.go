@@ -7,31 +7,37 @@ import (
 )
 
 func Parse(bnf AST, src string) AST {
-	p := &Parser{s: scan.Bytes(src), bnf: bnf}
-	var a AST
-	p.Parse(bnf, &a)
-	return a
+	var out AST
+	NewParser(bnf, src).Parse(&out)
+	return out
+}
+
+func NewParser(bnf AST, src string) *Parser {
+	return &Parser{s: scan.Bytes(src), bnf: bnf}
 }
 
 type Parser struct {
 	s   scan.Bytes
-	bnf AST
+	bnf AST // Root BNF.
 }
 
-func (p *Parser) Parse(bnf AST, out *AST) bool {
-	m := p.s.Mark()
+func (p *Parser) Parse(out *AST) bool {
+	return p.parse(p.bnf, out)
+}
+
+func (p *Parser) parse(bnf AST, out *AST) bool {
 	switch bnf.Type {
 	case "Root":
 		for _, stmt := range bnf.Next {
-			return p.Parse(stmt, out)
+			return p.parse(stmt, out)
 		}
 	case "Stmt":
-		return p.Parse(bnf.Next[1], out)
+		return p.parse(bnf.Next[1], out)
 	case "Func":
 		switch bnf.Text {
 		case "EXPR1":
 			var l, root, r AST
-			if p.Parse(bnf.Next[0], &l) && p.Parse(bnf.Next[1], &root) && p.Parse(bnf.Next[2], &r) {
+			if p.parse(bnf.Next[0], &l) && p.parse(bnf.Next[1], &root) && p.parse(bnf.Next[2], &r) {
 				*out = AST{Type: "Expr", Text: root.Text, Next: []AST{l, r}}
 				return true
 			}
@@ -39,7 +45,7 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 			var g []AST
 			for _, n := range bnf.Next {
 				var v AST
-				if !p.Parse(n, &v) {
+				if !p.parse(n, &v) {
 					return false
 				}
 				if !v.Empty() {
@@ -52,7 +58,7 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 	case "And":
 		for _, n := range bnf.Next {
 			var v AST
-			if !p.Parse(n, &v) {
+			if !p.parse(n, &v) {
 				return false
 			}
 			if !v.Empty() {
@@ -66,16 +72,18 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 		}
 		return true
 	case "Or":
+		m := p.s.Mark()
 		for _, n := range bnf.Next {
-			if p.Parse(n, out) {
+			if p.parse(n, out) {
 				return true
 			}
+			p.s.Move(m)
 		}
 	case "Quant":
 		c := 0
 		for {
 			var v AST
-			if !p.Parse(bnf.Next[0], &v) {
+			if !p.parse(bnf.Next[0], &v) {
 				break
 			}
 			if !v.Empty() {
@@ -96,38 +104,30 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 			return c > 0
 		}
 	case "Plain":
-		if p.s.Match(bnf.Text) {
+		if m := p.s.Mark(); p.s.Match(bnf.Text) {
 			out.Text = p.s.Text(m)
 			out.Type = "Ident"
 			return true
 		}
 	case "Regex":
-		re := regexp.MustCompile("^" + bnf.Text)
-		if v := re.FindIndex(p.s); v != nil {
+		if v := regexp.MustCompile(bnf.Text).FindIndex(p.s); v != nil {
+			m := p.s.Mark()
 			p.s.Advance(v[1])
 			out.Text = p.s.Text(m)
 			out.Type = "Ident"
 			return true
 		}
 	case "Ident":
-		if stmt, ok := p.findStmt(bnf.Text); ok {
-			return p.Parse(stmt, out)
+		for _, stmt := range p.bnf.Next {
+			if stmt.Next[0].Text == bnf.Text {
+				return p.parse(stmt, out)
+			}
 		}
 	case "Ignore":
 		var ignored AST
-		return p.Parse(bnf.Next[0], &ignored)
+		return p.parse(bnf.Next[0], &ignored)
 	}
-	p.s.Move(m)
 	return false
-}
-
-func (p *Parser) findStmt(id string) (AST, bool) {
-	for _, stmt := range p.bnf.Next {
-		if stmt.Next[0].Text == id {
-			return stmt, true
-		}
-	}
-	return AST{}, false
 }
 
 // Flatten returns a flat list of nodes. The

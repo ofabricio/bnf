@@ -1,17 +1,17 @@
 package bnf
 
 import (
-	"fmt"
 	"regexp"
 
 	"github.com/ofabricio/scan"
 )
 
 func Compile(bnf string) AST {
-	c := &Compiler{
-		s: scan.Bytes(bnf),
-	}
-	return c.Compile()
+	return NewCompiler(bnf).Compile()
+}
+
+func NewCompiler(bnf string) *Compiler {
+	return &Compiler{s: scan.Bytes(bnf)}
 }
 
 type Compiler struct {
@@ -19,169 +19,131 @@ type Compiler struct {
 }
 
 func (c *Compiler) Compile() AST {
-	var n []AST
-	c.stmts(&n)
-	return AST{Type: "Root", Next: n}
+	var stmts []AST
+	c.stmts(&stmts)
+	return AST{Type: "Root", Next: stmts}
 }
 
-func (c *Compiler) stmts(stmts *[]AST) bool {
-	for {
-		var stmt AST
-		if !c.stmt(&stmt) {
-			break
-		}
-		*stmts = append(*stmts, stmt)
+func (c *Compiler) stmts(out *[]AST) bool {
+	var stmt AST
+	for c.stmt(&stmt) {
+		*out = append(*out, stmt)
 	}
-	return len(*stmts) > 0
+	return len(*out) > 0
 }
 
-func (c *Compiler) stmt(stmt *AST) bool {
+func (c *Compiler) stmt(out *AST) bool {
 	var i AST
-	if c.s.Spaces(); c.ident(&i) && c.ost() && c.s.Match("=") && c.ost() {
-		var expr AST
-		if c.expr(&expr) {
-			*stmt = AST{Type: "Stmt", Next: []AST{i, expr}}
-			return true
-		}
+	if c.s.Spaces(); c.ident(&i) && c.ost() && c.s.Match("=") && c.expr(out) {
+		*out = AST{Type: "Stmt", Next: []AST{i, *out}}
+		return true
 	}
 	return false
 }
 
-func (c *Compiler) expr(expr *AST) bool {
+func (c *Compiler) expr(out *AST) bool {
 	var or []AST
-	for {
-		var v AST
-		if !c.term(&v) {
-			break
-		}
+	var v AST
+	for c.term(&v) {
 		or = append(or, v)
-		if !(c.ost() && c.s.Match("|") && c.ost()) {
+		if !c.s.Match("|") {
 			break
 		}
-	}
-	if len(or) == 1 {
-		*expr = or[0]
-		return true
 	}
 	if len(or) > 0 {
-		*expr = AST{Type: "Or", Next: or}
+		v = AST{Type: "Or", Next: or}
+		v.Compact()
+		*out = v
 		return true
 	}
 	return false
 }
 
-func (c *Compiler) term(expr *AST) bool {
+func (c *Compiler) term(out *AST) bool {
 	var and []AST
-	for {
-		var v AST
-		if !c.factor(&v) {
-			break
-		}
+	var v AST
+	for c.factor(&v) {
 		and = append(and, v)
 	}
-	if len(and) == 1 {
-		*expr = and[0]
-		return true
-	}
 	if len(and) > 0 {
-		*expr = AST{Type: "And", Next: and}
+		v = AST{Type: "And", Next: and}
+		v.Compact()
+		*out = v
 		return true
 	}
 	return false
 }
 
-func (c *Compiler) factor(expr *AST) bool {
+func (c *Compiler) factor(out *AST) bool {
 	c.st()
-	defer c.quantifier(expr)
-	if c.function(expr) {
-		return true
-	}
-	if c.s.Match("(") && c.ost() && c.expr(expr) && c.ost() && c.s.Match(")") {
-		return true
-	}
-	if c.value(expr) {
-		return true
-	}
-	return false
+	defer c.quantifier(out)
+	return c.function(out) ||
+		c.s.Match("(") && c.expr(out) && c.s.Match(")") ||
+		c.value(out)
 }
 
-func (c *Compiler) function(expr *AST) bool {
+func (c *Compiler) function(out *AST) bool {
 	if c.s.Match("EXPR1") {
 		var v AST
-		if c.s.Match("(") && c.term(&v) && c.s.Match(")") {
-			if len(v.Next) != 3 {
-				return false
-			}
-			*expr = AST{Type: "Func", Text: "EXPR1", Next: v.Next}
+		if c.factor(&v) && len(v.Next) == 3 {
+			*out = AST{Type: "Func", Text: "EXPR1", Next: v.Next}
 			return true
 		}
 	}
 	if c.s.Match("GROUP") {
 		var v AST
-		if c.s.Match("(") && c.term(&v) && c.s.Match(")") {
-			*expr = AST{Type: "Func", Text: "GROUP", Next: v.NextOrRoot()}
+		if c.factor(&v) {
+			*out = AST{Type: "Func", Text: "GROUP", Next: v.NextOrRoot()}
 			return true
 		}
 	}
 	return false
 }
 
-func (c *Compiler) quantifier(q *AST) bool {
+func (c *Compiler) quantifier(out *AST) bool {
 	m := c.s.Mark()
-	c.ost()
-	if mm := c.s.Mark(); c.s.MatchChar("*+?") {
-		*q = AST{Type: "Quant", Text: c.s.Text(mm), Next: []AST{*q}}
+	c.st()
+	if m := c.s.Mark(); c.s.MatchChar("*+?") {
+		*out = AST{Type: "Quant", Text: c.s.Text(m), Next: []AST{*out}}
 		return true
 	}
 	c.s.Move(m)
 	return true
 }
 
-func (c *Compiler) value(v *AST) bool {
-	if c.text(v) {
-		return true
-	}
-	if c.ident(v) {
+func (c *Compiler) value(out *AST) bool {
+	return c.text(out) || c.ident(out)
+}
+
+func (c *Compiler) ident(out *AST) bool {
+	if m := c.s.Mark(); c.regex(reIden) {
+		*out = AST{Type: "Ident", Text: c.s.Text(m)}
 		return true
 	}
 	return false
 }
 
-func (c *Compiler) ident(v *AST) bool {
-	var s string
-	if c.s.TextWith(&s, func(*scan.Bytes) bool {
-		return c.regex(`^\w+`)
-	}) {
-		*v = AST{Type: "Ident", Text: s}
-		return true
-	}
-	return false
-}
-
-func (c *Compiler) text(v *AST) bool {
+func (c *Compiler) text(out *AST) bool {
 	m := c.s.Mark()
 	ignore, regexp := c.s.Match("I"), c.s.Match("R")
-	var s string
-	if c.s.TextWith(&s, func(*scan.Bytes) bool {
-		return c.regex(`^'([^'\\]|\\.)*'`)
-	}) {
-		s = s[1 : len(s)-1]
-		a := AST{Type: "Plain", Text: s}
+	if m := c.s.Mark(); c.regex(reText) {
+		t := c.s.Text(m)
+		t = t[1 : len(t)-1]
+		v := AST{Type: "Plain", Text: t}
 		if regexp {
-			a.Type = "Regex"
+			v = AST{Type: "Regex", Text: "^" + v.Text}
 		}
 		if ignore {
-			a = AST{Type: "Ignore", Next: []AST{a}}
+			v = AST{Type: "Ignore", Next: []AST{v}}
 		}
-		*v = a
+		*out = v
 		return true
 	}
 	c.s.Move(m)
 	return false
 }
 
-func (c *Compiler) regex(r string) bool {
-	re := regexp.MustCompile(r)
+func (c *Compiler) regex(re *regexp.Regexp) bool {
 	if v := re.FindIndex(c.s); v != nil {
 		return c.s.Advance(v[1])
 	}
@@ -198,43 +160,5 @@ func (c *Compiler) ost() bool {
 	return c.st() || true
 }
 
-func Print(a AST) {
-	print(a, "")
-}
-
-func print(a AST, pad string) {
-	if a.Text == "" {
-		fmt.Printf("%s[%s]\n", pad, a.Type)
-	} else {
-		fmt.Printf("%s[%s] %s\n", pad, a.Type, a.Text)
-	}
-	for _, n := range a.Next {
-		print(n, pad+"    ")
-	}
-}
-
-type AST struct {
-	Type string
-	Text string
-	Next []AST
-}
-
-func (a AST) NextOrRoot() []AST {
-	if len(a.Next) == 0 {
-		return []AST{a}
-	}
-	return a.Next
-}
-
-// Compact replaces the root node with the
-// child node when there is only one child
-// node.
-func (a *AST) Compact() {
-	if len(a.Next) == 1 {
-		*a = a.Next[0]
-	}
-}
-
-func (a AST) Empty() bool {
-	return len(a.Next)+len(a.Type) == 0
-}
+var reText = regexp.MustCompile(`^'([^'\\]|\\.)*'`)
+var reIden = regexp.MustCompile(`^\w+`)
