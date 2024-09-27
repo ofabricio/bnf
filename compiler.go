@@ -35,12 +35,12 @@ func (c *Compiler) stmts(stmts *[]AST) bool {
 	return len(*stmts) > 0
 }
 
-func (c *Compiler) stmt(n *AST) bool {
+func (c *Compiler) stmt(stmt *AST) bool {
 	var i AST
 	if c.s.Spaces(); c.ident(&i) && c.ost() && c.s.Match("=") && c.ost() {
 		var expr AST
 		if c.expr(&expr) {
-			*n = AST{Type: "Stmt", Next: []AST{i, expr}}
+			*stmt = AST{Type: "Stmt", Next: []AST{i, expr}}
 			return true
 		}
 	}
@@ -48,32 +48,50 @@ func (c *Compiler) stmt(n *AST) bool {
 }
 
 func (c *Compiler) expr(expr *AST) bool {
-	var l, r AST
-	if c.term(&l) {
-		if c.ost() && c.s.Match("|") && c.ost() && c.expr(&r) {
-			*expr = AST{Type: "Or", Next: []AST{l, r}}
-			return true
+	var or []AST
+	for {
+		var v AST
+		if !c.term(&v) {
+			break
 		}
-		*expr = l
+		or = append(or, v)
+		if !(c.ost() && c.s.Match("|") && c.ost()) {
+			break
+		}
+	}
+	if len(or) == 1 {
+		*expr = or[0]
+		return true
+	}
+	if len(or) > 0 {
+		*expr = AST{Type: "Or", Next: or}
 		return true
 	}
 	return false
 }
 
 func (c *Compiler) term(expr *AST) bool {
-	var l, r AST
-	if c.factor(&l) {
-		if c.st() && c.term(&r) {
-			*expr = AST{Type: "And", Next: []AST{l, r}}
-			return true
+	var and []AST
+	for {
+		var v AST
+		if !c.factor(&v) {
+			break
 		}
-		*expr = l
+		and = append(and, v)
+	}
+	if len(and) == 1 {
+		*expr = and[0]
+		return true
+	}
+	if len(and) > 0 {
+		*expr = AST{Type: "And", Next: and}
 		return true
 	}
 	return false
 }
 
 func (c *Compiler) factor(expr *AST) bool {
+	c.st()
 	defer c.quantifier(expr)
 	if c.function(expr) {
 		return true
@@ -89,23 +107,20 @@ func (c *Compiler) factor(expr *AST) bool {
 
 func (c *Compiler) function(expr *AST) bool {
 	if c.s.Match("EXPR1") {
-		var l, root, r AST
-		if c.s.Match("(") && c.ost() && c.factor(&l) && c.ost() && c.factor(&root) && c.ost() && c.factor(&r) && c.ost() && c.s.Match(")") {
-			*expr = AST{Type: "Func", Text: "EXPR1", Next: []AST{l, root, r}}
+		var v AST
+		if c.s.Match("(") && c.term(&v) && c.s.Match(")") {
+			if len(v.Next) != 3 {
+				return false
+			}
+			*expr = AST{Type: "Func", Text: "EXPR1", Next: v.Next}
 			return true
 		}
 	}
 	if c.s.Match("GROUP") {
-		if c.s.Match("(") {
-			var vs []AST
-			var v AST
-			for c.ost(); c.factor(&v); c.ost() {
-				vs = append(vs, v)
-			}
-			if c.s.Match(")") {
-				*expr = AST{Type: "Func", Text: "GROUP", Next: vs}
-				return true
-			}
+		var v AST
+		if c.s.Match("(") && c.term(&v) && c.s.Match(")") {
+			*expr = AST{Type: "Func", Text: "GROUP", Next: v.NextOrRoot()}
+			return true
 		}
 	}
 	return false
@@ -202,4 +217,24 @@ type AST struct {
 	Type string
 	Text string
 	Next []AST
+}
+
+func (a AST) NextOrRoot() []AST {
+	if len(a.Next) == 0 {
+		return []AST{a}
+	}
+	return a.Next
+}
+
+// Compact replaces the root node with the
+// child node when there is only one child
+// node.
+func (a *AST) Compact() {
+	if len(a.Next) == 1 {
+		*a = a.Next[0]
+	}
+}
+
+func (a AST) Empty() bool {
+	return len(a.Next)+len(a.Type) == 0
 }

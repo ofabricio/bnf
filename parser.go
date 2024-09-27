@@ -26,14 +26,7 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 			return p.Parse(stmt, out)
 		}
 	case "Stmt":
-		var v AST
-		if p.Parse(bnf.Next[1], &v) {
-			if v.Type == "And" {
-				v.Type = "Group"
-			}
-			*out = v
-			return true
-		}
+		return p.Parse(bnf.Next[1], out)
 	case "Func":
 		switch bnf.Text {
 		case "EXPR1":
@@ -49,7 +42,7 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 				if !p.Parse(n, &v) {
 					return false
 				}
-				if !p.empty(v) {
+				if !v.Empty() {
 					g = append(g, v)
 				}
 			}
@@ -57,30 +50,26 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 			return true
 		}
 	case "And":
-		var and []AST
 		for _, n := range bnf.Next {
 			var v AST
 			if !p.Parse(n, &v) {
 				return false
 			}
-			if v.Type == "And" {
-				and = append(and, v.Next...)
-			} else if !p.empty(v) {
-				and = append(and, v)
+			if !v.Empty() {
+				out.Next = append(out.Next, v)
 			}
 		}
-		if len(and) == 1 {
-			*out = and[0]
+		if len(out.Next) == 1 {
+			*out = out.Next[0]
 		} else {
-			out.Type = "And"
-			out.Next = append(out.Next, and...)
+			out.Type = "Group"
 		}
 		return true
 	case "Or":
-		var v AST
-		if p.Parse(bnf.Next[0], &v) || p.Parse(bnf.Next[1], &v) {
-			*out = v
-			return true
+		for _, n := range bnf.Next {
+			if p.Parse(n, out) {
+				return true
+			}
 		}
 	case "Quant":
 		c := 0
@@ -89,12 +78,12 @@ func (p *Parser) Parse(bnf AST, out *AST) bool {
 			if !p.Parse(bnf.Next[0], &v) {
 				break
 			}
-			if !p.empty(v) {
+			if !v.Empty() {
 				out.Next = append(out.Next, v)
 			}
 			c++
 		}
-		p.compact(out)
+		out.Compact()
 		if len(out.Next) > 0 {
 			out.Type = "Group"
 		}
@@ -139,19 +128,6 @@ func (p *Parser) findStmt(id string) (AST, bool) {
 		}
 	}
 	return AST{}, false
-}
-
-// compact replaces the root node with the
-// child node when there is only one child
-// node.
-func (p *Parser) compact(out *AST) {
-	if len(out.Next) == 1 {
-		*out = out.Next[0]
-	}
-}
-
-func (p *Parser) empty(a AST) bool {
-	return len(a.Next)+len(a.Type) == 0
 }
 
 // Flatten returns a flat list of nodes. The

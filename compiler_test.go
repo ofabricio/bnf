@@ -4,7 +4,7 @@ import (
 	"github.com/ofabricio/bnf"
 )
 
-func Example_all() {
+func ExampleCompile() {
 
 	s := `
 		a = a
@@ -46,9 +46,8 @@ func Example_all() {
 	//         [Ident] d
 	//         [And]
 	//             [Ident] a
-	//             [And]
-	//                 [Ident] b
-	//                 [Ident] c
+	//             [Ident] b
+	//             [Ident] c
 	//     [Stmt]
 	//         [Ident] e
 	//         [Or]
@@ -67,9 +66,8 @@ func Example_all() {
 	//         [Ident] g
 	//         [Or]
 	//             [Ident] a
-	//             [Or]
-	//                 [Ident] b
-	//                 [Ident] c
+	//             [Ident] b
+	//             [Ident] c
 	//     [Stmt]
 	//         [Ident] h
 	//         [Or]
@@ -83,11 +81,10 @@ func Example_all() {
 	//         [Ident] i
 	//         [Or]
 	//             [Ident] a
-	//             [Or]
-	//                 [And]
-	//                     [Ident] b
-	//                     [Ident] c
-	//                 [Ident] d
+	//             [And]
+	//                 [Ident] b
+	//                 [Ident] c
+	//             [Ident] d
 	//     [Stmt]
 	//         [Ident] j
 	//         [And]
@@ -117,16 +114,15 @@ func Example_all() {
 	//         [And]
 	//             [Quant] *
 	//                 [Ident] a
-	//             [And]
-	//                 [Quant] +
-	//                     [Ident] b
-	//                 [Quant] *
-	//                     [Or]
-	//                         [Quant] ?
-	//                             [And]
-	//                                 [Ident] c
-	//                                 [Ident] d
-	//                         [Ident] e
+	//             [Quant] +
+	//                 [Ident] b
+	//             [Quant] *
+	//                 [Or]
+	//                     [Quant] ?
+	//                         [And]
+	//                             [Ident] c
+	//                             [Ident] d
+	//                     [Ident] e
 	//     [Stmt]
 	//         [Ident] m
 	//         [Func] EXPR1
