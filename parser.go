@@ -56,20 +56,19 @@ func (p *Parser) parse(bnf AST, out *AST) bool {
 			return true
 		}
 	case "And":
+		var and []AST
 		for _, n := range bnf.Next {
 			var v AST
 			if !p.parse(n, &v) {
 				return false
 			}
 			if !v.Empty() {
-				out.Next = append(out.Next, v)
+				and = append(and, v)
 			}
 		}
-		if len(out.Next) == 1 {
-			*out = out.Next[0]
-		} else {
-			out.Type = "Group"
-		}
+		out.Next = and
+		out.Type = "Group"
+		out.Compact()
 		return true
 	case "Or":
 		m := p.s.Mark()

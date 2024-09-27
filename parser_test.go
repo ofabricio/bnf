@@ -157,3 +157,22 @@ func Example_quantifier() {
 	//     [Ident] c
 	//     [Ident] d
 }
+
+func ExampleParse_and() {
+
+	theINP := `acbaab`
+
+	theBNF := `
+	    root = ( 'a' 'a' | '.'ri ) *
+	`
+
+	b := bnf.Compile(theBNF)
+	v := bnf.Parse(b, theINP)
+
+	bnf.Print(v)
+
+	// Output:
+	// [Group]
+	//     [Ident] a
+	//     [Ident] a
+}
