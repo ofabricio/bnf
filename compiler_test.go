@@ -21,6 +21,7 @@ func ExampleCompile() {
 		l = a * b+ ( ( c d ) ? | e )*
 		m = EXPR1( a b c )
 		n = GROUP( a b c )
+		o = 'a'i 'b'r 'c'ri
 	`
 
 	v := bnf.Compile(s)
@@ -135,4 +136,12 @@ func ExampleCompile() {
 	//             [Ident] a
 	//             [Ident] b
 	//             [Ident] c
+	//     [Stmt]
+	//         [Ident] o
+	//         [And]
+	//             [Ignore]
+	//                 [Plain] a
+	//             [Regex] ^b
+	//             [Ignore]
+	//                 [Regex] ^c
 }
