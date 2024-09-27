@@ -176,3 +176,88 @@ func ExampleParse_and() {
 	//     [Ident] a
 	//     [Ident] a
 }
+
+func ExampleParse_until() {
+
+	theINP := `aaxaaa`
+
+	theBNF := `
+	    root = UNTIL( 'x' )
+	`
+
+	b := bnf.Compile(theBNF)
+	v := bnf.Parse(b, theINP)
+
+	bnf.Print(v)
+
+	// Output:
+	// [Ident] aa
+}
+
+func ExampleParse_until2() {
+
+	theINP := `
+	[a]
+	One
+
+	[b]
+	Two
+
+	[a]
+	Three
+
+	[b]
+	Four
+	`
+
+	theBNF := `
+	    root = section*
+	 section = ws tag ws UNTIL(ws tag)
+		 tag = '[a]' | '[b]'
+		  ws = '\s*'ri
+	`
+
+	b := bnf.Compile(theBNF)
+	v := bnf.Parse(b, theINP)
+
+	bnf.Print(v)
+
+	// Output:
+	// [Group]
+	//     [Group]
+	//         [Ident] [a]
+	//         [Ident] One
+	//     [Group]
+	//         [Ident] [b]
+	//         [Ident] Two
+	//     [Group]
+	//         [Ident] [a]
+	//         [Ident] Three
+	//     [Group]
+	//         [Ident] [b]
+	//         [Ident] Four
+}
+
+func Example_match() {
+
+	theINP := `5*(4+3)*2`
+
+	theBNF := `
+	    expr   = EXPR1(term   '+' expr) | term
+	    term   = EXPR1(factor '*' term) | factor
+	    factor = MATCH( '(' expr ')' )  | value
+	    value  = '\d+'r
+	`
+
+	b := bnf.Compile(theBNF)
+	v := bnf.Parse(b, theINP)
+
+	bnf.Print(v)
+
+	// Output:
+	// [Expr] *
+	//     [Ident] 5
+	//     [Expr] *
+	//         [Ident] (4+3)
+	//         [Ident] 2
+}

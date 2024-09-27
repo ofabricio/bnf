@@ -54,6 +54,18 @@ func (p *Parser) parse(bnf AST, out *AST) bool {
 			}
 			*out = AST{Type: "Group", Next: g}
 			return true
+		case "UNTIL":
+			m := p.s.Mark()
+			if p.match(bnf) {
+				*out = AST{Type: "Ident", Text: p.s.Text(m)}
+				return true
+			}
+		case "MATCH":
+			m := p.s.Mark()
+			if p.match(bnf) {
+				*out = AST{Type: "Ident", Text: p.s.Text(m)}
+				return true
+			}
 		}
 	case "And":
 		var and []AST
@@ -125,6 +137,87 @@ func (p *Parser) parse(bnf AST, out *AST) bool {
 	case "Ignore":
 		var ignored AST
 		return p.parse(bnf.Next[0], &ignored)
+	}
+	return false
+}
+
+func (p *Parser) match(bnf AST) bool {
+	switch bnf.Type {
+	case "Root":
+		for _, stmt := range bnf.Next {
+			return p.match(stmt)
+		}
+	case "Stmt":
+		return p.match(bnf.Next[1])
+	case "Func":
+		switch bnf.Text {
+		case "EXPR1":
+			return p.match(bnf.Next[0]) && p.match(bnf.Next[1]) && p.match(bnf.Next[2])
+		case "GROUP":
+			for _, n := range bnf.Next {
+				if !p.match(n) {
+					return false
+				}
+			}
+			return true
+		case "UNTIL":
+			c := 0
+			for p.s.More() {
+				m := p.s.Mark()
+				if p.match(bnf.Next[0]) {
+					p.s.Move(m)
+					return true
+				}
+				p.s.Next()
+				c++
+			}
+			return c > 0
+		case "MATCH":
+			return p.match(bnf.Next[0])
+		}
+	case "And":
+		for _, n := range bnf.Next {
+			if !p.match(n) {
+				return false
+			}
+		}
+		return true
+	case "Or":
+		m := p.s.Mark()
+		for _, n := range bnf.Next {
+			if p.match(n) {
+				return true
+			}
+			p.s.Move(m)
+		}
+	case "Quant":
+		c := 0
+		for p.match(bnf.Next[0]) {
+			c++
+		}
+		switch bnf.Text {
+		case "?":
+			return c <= 1
+		case "*":
+			return c >= 0
+		case "+":
+			return c > 0
+		}
+	case "Plain":
+		return p.s.Match(bnf.Text)
+	case "Regex":
+		if v := regexp.MustCompile(bnf.Text).FindIndex(p.s); v != nil {
+			p.s.Advance(v[1])
+			return true
+		}
+	case "Ident":
+		for _, stmt := range p.bnf.Next {
+			if stmt.Next[0].Text == bnf.Text {
+				return p.match(stmt)
+			}
+		}
+	case "Ignore":
+		return p.match(bnf.Next[0])
 	}
 	return false
 }

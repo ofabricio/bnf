@@ -97,6 +97,20 @@ func (c *Compiler) function(out *AST) bool {
 			return true
 		}
 	}
+	if c.s.Match("UNTIL") {
+		var v AST
+		if c.factor(&v) {
+			*out = AST{Type: "Func", Text: "UNTIL", Next: []AST{v}}
+			return true
+		}
+	}
+	if c.s.Match("MATCH") {
+		var v AST
+		if c.factor(&v) {
+			*out = AST{Type: "Func", Text: "MATCH", Next: []AST{v}}
+			return true
+		}
+	}
 	return false
 }
 

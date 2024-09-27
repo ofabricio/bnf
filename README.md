@@ -92,3 +92,5 @@ func main() {
 | `'...'i` | Ignore the token (do not emit it). |
 | `EXPR1(a b c)` | Make the tokens `a b c` an expression where `b` will be the root token. |
 | `GROUP(a b c)` | Group the tokens `a b c`. |
+| `UNTIL(a)` | Match any character until `a` and return the text until it. Does not include `a`. |
+| `MATCH(a)` | Match `a` and return the matched text. |
