@@ -91,27 +91,42 @@ func (p *Parser) parse(bnf AST, out *AST) bool {
 			p.s.Move(m)
 		}
 	case "Quant":
-		c := 0
-		for {
-			var v AST
-			if !p.parse(bnf.Next[0], &v) {
-				break
-			}
-			if !v.Empty() {
-				out.Next = append(out.Next, v)
-			}
-			c++
-		}
-		out.Compact()
-		if len(out.Next) > 0 {
-			out.Type = "Group"
-		}
 		switch bnf.Text {
 		case "?":
-			return c <= 1
+			return p.parse(bnf.Next[0], out) || true
 		case "*":
+			c := 0
+			for {
+				var v AST
+				if !p.parse(bnf.Next[0], &v) {
+					break
+				}
+				if !v.Empty() {
+					out.Next = append(out.Next, v)
+				}
+				c++
+			}
+			out.Compact()
+			if len(out.Next) > 0 {
+				out.Type = "Group"
+			}
 			return c >= 0
 		case "+":
+			c := 0
+			for {
+				var v AST
+				if !p.parse(bnf.Next[0], &v) {
+					break
+				}
+				if !v.Empty() {
+					out.Next = append(out.Next, v)
+				}
+				c++
+			}
+			out.Compact()
+			if len(out.Next) > 0 {
+				out.Type = "Group"
+			}
 			return c > 0
 		}
 	case "Plain":
@@ -129,6 +144,10 @@ func (p *Parser) parse(bnf AST, out *AST) bool {
 			return true
 		}
 	case "Ident":
+		switch bnf.Text {
+		case "EOF":
+			return p.s.Empty()
+		}
 		for _, stmt := range p.bnf.Next {
 			if stmt.Next[0].Text == bnf.Text {
 				return p.parse(stmt, out)
@@ -166,7 +185,7 @@ func (p *Parser) match(bnf AST) bool {
 				m := p.s.Mark()
 				if p.match(bnf.Next[0]) {
 					p.s.Move(m)
-					return true
+					break
 				}
 				p.s.Next()
 				c++
@@ -191,16 +210,20 @@ func (p *Parser) match(bnf AST) bool {
 			p.s.Move(m)
 		}
 	case "Quant":
-		c := 0
-		for p.match(bnf.Next[0]) {
-			c++
-		}
 		switch bnf.Text {
 		case "?":
-			return c <= 1
+			return p.match(bnf.Next[0]) || true
 		case "*":
+			c := 0
+			for p.match(bnf.Next[0]) {
+				c++
+			}
 			return c >= 0
 		case "+":
+			c := 0
+			for p.match(bnf.Next[0]) {
+				c++
+			}
 			return c > 0
 		}
 	case "Plain":

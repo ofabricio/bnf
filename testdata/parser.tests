@@ -1,0 +1,198 @@
+[Test]
+Test that '...'r is a regular expression.
+
+[Give]
+One    Two
+
+[When]
+root = 'One' '\s+'r 'Two'
+
+[Then]
+[Group]
+    [Ident] One
+    [Ident]     
+    [Ident] Two
+
+
+[Test]
+Test that '...'i prevents a token from being emitted.
+
+[Give]
+OneTwoThreeFour
+
+[When]
+root = 'One'i 'Two' 'Three'i 'Four'
+
+[Then]
+[Group]
+    [Ident] Two
+    [Ident] Four
+
+
+[Test]
+Test that "And" is using a new variable when looping, instead of out.Next
+
+[Give]
+acbaab
+
+[When]
+root = ( 'a' 'a' | '.'ri ) *
+
+[Then]
+[Group]
+    [Ident] a
+    [Ident] a
+
+
+[Test]
+Test the * quantifier. It must match zero, one or many.
+
+[Give]
+OneTwo OneOneTwo Two
+
+[When]
+root = 'One'* 'Two' ' 'i 'One'* 'Two' ' 'i 'One'* 'Two'
+
+[Then]
+[Group]
+    [Ident] One
+    [Ident] Two
+    [Group]
+        [Ident] One
+        [Ident] One
+    [Ident] Two
+    [Ident] Two
+
+
+[Test]
+Test the + quantifier. It must match one or many.
+
+[Give]
+OneTwo OneOneTwo Two
+
+[When]
+root = 'One'+ 'Two' ' 'i 'One'+ 'Two' ' 'i ( 'One'+ | 'Two' )
+
+[Then]
+[Group]
+    [Ident] One
+    [Ident] Two
+    [Group]
+        [Ident] One
+        [Ident] One
+    [Ident] Two
+    [Ident] Two
+
+
+[Test]
+Test the ? quantifier. It must match zero or one.
+
+[Give]
+OneTwo Two OneOneTwo
+
+[When]
+root = 'One'? 'Two' ' 'i 'One'? 'Two' ' 'i 'One'? 'OneTwo'
+
+[Then]
+[Group]
+    [Ident] One
+    [Ident] Two
+    [Ident] Two
+    [Ident] One
+    [Ident] OneTwo
+
+
+[Test]
+Test that UNTIL matches until 'Two', not including it in the result.
+
+[Give]
+OneOneTwoOne
+
+[When]
+root = UNTIL('Two')
+
+[Then]
+[Ident] OneOne
+
+
+[Test]
+Test that UNTIL matches until EOF.
+
+[Give]
+OneOneTwoOne
+
+[When]
+root = UNTIL('Three')
+
+[Then]
+[Ident] OneOneTwoOne
+
+
+[Test]
+Test that UNTIL returns false if it doesn't advance.
+
+[Give]
+OneTwo
+
+[When]
+root = UNTIL('One')
+
+[Then]
+[]
+
+
+[Test]
+MATCH must match the tree and return the matched token.
+Notice the difference between 'One'+ with and without MATCH.
+
+[Give]
+OneOne OneOne
+
+[When]
+root = MATCH('One'+) ' 'i 'One'+
+
+[Then]
+[Group]
+    [Ident] OneOne
+    [Group]
+        [Ident] One
+        [Ident] One
+
+
+[Test]
+Test MATCH and the ? quantifier.
+
+[Give]
+OneTwo Two OneOneTwo
+
+[When]
+root = MATCH('One'? 'Two' ' 'i 'One'? 'Two' ' 'i 'One'? 'OneTwo')
+
+[Then]
+[Ident] OneTwo Two OneOneTwo
+
+
+[Test]
+Test MATCH and the + quantifier.
+
+[Give]
+OneTwo OneOneTwo Two
+
+[When]
+root = MATCH('One'+ 'Two' ' 'i 'One'+ 'Two' ' 'i ( 'One'+ | 'Two' ))
+
+[Then]
+[Ident] OneTwo OneOneTwo Two
+
+
+[Test]
+Test MATCH and the * quantifier.
+
+[Give]
+OneTwo OneOneTwo Two
+
+[When]
+root = MATCH('One'* 'Two' ' 'i 'One'* 'Two' ' 'i 'One'* 'Two')
+
+[Then]
+[Ident] OneTwo OneOneTwo Two

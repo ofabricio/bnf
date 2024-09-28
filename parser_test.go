@@ -2,23 +2,26 @@ package bnf_test
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"testing"
 
 	"github.com/ofabricio/bnf"
 )
 
 func Example_expr() {
 
-	theINP := `6+5*(4+3)*2`
+	INP := `6+5*(4+3)*2`
 
-	theBNF := `
+	BNF := `
 	    expr   = EXPR1(term   '+' expr) | term
 	    term   = EXPR1(factor '*' term) | factor
 	    factor = '('i expr ')'i | value
 	    value  = '\d+'r
 	`
 
-	b := bnf.Compile(theBNF)
-	v := bnf.Parse(b, theINP)
+	b := bnf.Compile(BNF)
+	v := bnf.Parse(b, INP)
 
 	bnf.Print(v)
 
@@ -36,13 +39,13 @@ func Example_expr() {
 
 func Example_group() {
 
-	theINP := `
+	INP := `
 	    func Say(msg string) {
 	        fmt.Println(msg)
 	    }
 	`
 
-	theBNF := `
+	BNF := `
 	    root = ws func
 	    func = 'func'i ws name '('i args ')'i ws '{'i ws body ws '}'i
 	    args = name ws name
@@ -51,8 +54,8 @@ func Example_group() {
 	      ws = '\s*'ri
 	`
 
-	b := bnf.Compile(theBNF)
-	v := bnf.Parse(b, theINP)
+	b := bnf.Compile(BNF)
+	v := bnf.Parse(b, INP)
 
 	bnf.Print(v)
 
@@ -71,14 +74,14 @@ func Example_group() {
 
 func ExampleFlatten() {
 
-	theINP := `abcd`
+	INP := `abcd`
 
-	theBNF := `
+	BNF := `
 	    root = GROUP( 'a' GROUP( 'b' GROUP( 'c' GROUP( 'd' ) ) ) )
 	`
 
-	b := bnf.Compile(theBNF)
-	v := bnf.Parse(b, theINP)
+	b := bnf.Compile(BNF)
+	v := bnf.Parse(b, INP)
 
 	fmt.Println("AST:")
 	bnf.Print(v)
@@ -130,134 +133,97 @@ func ExampleFlatten() {
 	//     [Ident] d
 }
 
-func Example_quantifier() {
+func ExampleParse_parsetests() {
 
-	theINP := `a aa b bb c d`
+	// This tests garantees that the testdata parsing is correct.
 
-	theBNF := `
-	    root = 'a'+ s 'a'+ s 'a'* 'b'* s 'b'* s 'c'? s 'c'? 'd'
-           s = ' 'i
+	INP := `
+[Test]
+One
+
+[Give]
+Two
+
+[When]
+Three
+
+[Then]
+Four
+
+[Test]
+Five
+
+[Give]
+Six
+
+[When]
+Seven
+
+[Then]
+Eight
 	`
 
-	b := bnf.Compile(theBNF)
-	v := bnf.Parse(b, theINP)
-
-	bnf.Print(v)
-
-	// Output:
-	// [Group]
-	//     [Ident] a
-	//     [Group]
-	//         [Ident] a
-	//         [Ident] a
-	//     [Ident] b
-	//     [Group]
-	//         [Ident] b
-	//         [Ident] b
-	//     [Ident] c
-	//     [Ident] d
-}
-
-func ExampleParse_and() {
-
-	theINP := `acbaab`
-
-	theBNF := `
-	    root = ( 'a' 'a' | '.'ri ) *
-	`
-
-	b := bnf.Compile(theBNF)
-	v := bnf.Parse(b, theINP)
-
-	bnf.Print(v)
-
-	// Output:
-	// [Group]
-	//     [Ident] a
-	//     [Ident] a
-}
-
-func ExampleParse_until() {
-
-	theINP := `aaxaaa`
-
-	theBNF := `
-	    root = UNTIL( 'x' )
-	`
-
-	b := bnf.Compile(theBNF)
-	v := bnf.Parse(b, theINP)
-
-	bnf.Print(v)
-
-	// Output:
-	// [Ident] aa
-}
-
-func ExampleParse_until2() {
-
-	theINP := `
-	[a]
-	One
-
-	[b]
-	Two
-
-	[a]
-	Three
-
-	[b]
-	Four
-	`
-
-	theBNF := `
-	    root = section*
-	 section = ws tag ws UNTIL(ws tag)
-		 tag = '[a]' | '[b]'
+	BNF := `
+	    root = (section section section section)+
+	 section = ws tag '\n'ri UNTIL(ws (tag | EOF))
+		 tag = '[Test]'i | '[Give]'i | '[When]'i | '[Then]'i
 		  ws = '\s*'ri
 	`
 
-	b := bnf.Compile(theBNF)
-	v := bnf.Parse(b, theINP)
+	b := bnf.Compile(BNF)
+	v := bnf.Parse(b, INP)
 
 	bnf.Print(v)
 
 	// Output:
 	// [Group]
 	//     [Group]
-	//         [Ident] [a]
 	//         [Ident] One
-	//     [Group]
-	//         [Ident] [b]
 	//         [Ident] Two
-	//     [Group]
-	//         [Ident] [a]
 	//         [Ident] Three
-	//     [Group]
-	//         [Ident] [b]
 	//         [Ident] Four
+	//     [Group]
+	//         [Ident] Five
+	//         [Ident] Six
+	//         [Ident] Seven
+	//         [Ident] Eight
 }
 
-func Example_match() {
+func TestParser(t *testing.T) {
 
-	theINP := `5*(4+3)*2`
+	INP, err := os.ReadFile("testdata/parser.tests")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	theBNF := `
-	    expr   = EXPR1(term   '+' expr) | term
-	    term   = EXPR1(factor '*' term) | factor
-	    factor = MATCH( '(' expr ')' )  | value
-	    value  = '\d+'r
+	BNF := `
+	    root = (section section section section)+
+	 section = ws tag '\n'ri UNTIL(ws (tag | EOF))
+		 tag = '[Test]'i | '[Give]'i | '[When]'i | '[Then]'i
+		  ws = '\s*'ri
 	`
 
-	b := bnf.Compile(theBNF)
-	v := bnf.Parse(b, theINP)
+	b := bnf.Compile(BNF)
+	v := bnf.Parse(b, string(INP))
 
-	bnf.Print(v)
+	if len(v.Next) == 0 {
+		t.Fatal("No tests found")
+	}
 
-	// Output:
-	// [Expr] *
-	//     [Ident] 5
-	//     [Expr] *
-	//         [Ident] (4+3)
-	//         [Ident] 2
+	for _, n := range v.Next {
+
+		desc := n.Next[0].Text
+		give := n.Next[1].Text
+		when := n.Next[2].Text
+		then := n.Next[3].Text
+
+		b := bnf.Compile(when)
+		v := bnf.Parse(b, give)
+
+		got := strings.TrimSpace(bnf.String(v))
+		exp := strings.TrimSpace(then)
+		if got != exp {
+			t.Errorf("\nTest:\n%s\nGot:\n%s\nExp:\n%s\n", desc, got, exp)
+		}
+	}
 }

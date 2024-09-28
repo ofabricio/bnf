@@ -1,6 +1,11 @@
 package bnf
 
-import "fmt"
+import (
+	"fmt"
+	"io"
+	"os"
+	"strings"
+)
 
 type AST struct {
 	Type string
@@ -27,17 +32,23 @@ func (a AST) Empty() bool {
 	return len(a.Next)+len(a.Type) == 0
 }
 
-func Print(a AST) {
-	print(a, "")
+func String(a AST) string {
+	var b strings.Builder
+	print(&b, a, "")
+	return b.String()
 }
 
-func print(a AST, pad string) {
-	if a.Text == "" {
-		fmt.Printf("%s[%s]\n", pad, a.Type)
+func Print(a AST) {
+	print(os.Stdout, a, "")
+}
+
+func print(out io.Writer, a AST, pad string) {
+	if len(a.Text) == 0 {
+		fmt.Fprintf(out, "%s[%s]\n", pad, a.Type)
 	} else {
-		fmt.Printf("%s[%s] %s\n", pad, a.Type, a.Text)
+		fmt.Fprintf(out, "%s[%s] %s\n", pad, a.Type, a.Text)
 	}
 	for _, n := range a.Next {
-		print(n, pad+"    ")
+		print(out, n, pad+"    ")
 	}
 }
