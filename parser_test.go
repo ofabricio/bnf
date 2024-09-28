@@ -210,6 +210,8 @@ func TestParser(t *testing.T) {
 		t.Fatal("No tests found")
 	}
 
+	var out strings.Builder
+	out.Grow(512)
 	for _, n := range v.Next {
 
 		desc := n.Next[0].Text
@@ -220,10 +222,12 @@ func TestParser(t *testing.T) {
 		b := bnf.Compile(when)
 		v := bnf.Parse(b, give)
 
-		got := strings.TrimSpace(bnf.String(v))
+		bnf.Write(&out, v)
+		got := strings.TrimSpace(out.String())
 		exp := strings.TrimSpace(then)
 		if got != exp {
-			t.Errorf("\nTest:\n%s\nGot:\n%s\nExp:\n%s\n", desc, got, exp)
+			t.Errorf("\nTest:\n%s\nInp:\n%s\nBNF:\n%s\nGot:\n%s\nExp:\n%s\n", desc, give, when, got, exp)
 		}
+		out.Reset()
 	}
 }

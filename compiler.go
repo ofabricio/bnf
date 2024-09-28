@@ -34,7 +34,7 @@ func (c *Compiler) stmts(out *[]AST) bool {
 
 func (c *Compiler) stmt(out *AST) bool {
 	var i AST
-	if c.s.Spaces(); c.ident(&i) && c.ost() && c.s.Match("=") && c.expr(out) {
+	if c.s.Spaces(); c.ident(&i) && c.ost() && c.s.MatchChar("=") && c.expr(out) {
 		*out = AST{Type: "Stmt", Next: []AST{i, *out}}
 		return true
 	}
@@ -46,14 +46,13 @@ func (c *Compiler) expr(out *AST) bool {
 	var v AST
 	for c.term(&v) {
 		or = append(or, v)
-		if !c.s.Match("|") {
+		if !c.s.MatchChar("|") {
 			break
 		}
 	}
 	if len(or) > 0 {
-		v = AST{Type: "Or", Next: or}
-		v.Compact()
-		*out = v
+		*out = AST{Type: "Or", Next: or}
+		out.Compact()
 		return true
 	}
 	return false
@@ -66,9 +65,8 @@ func (c *Compiler) term(out *AST) bool {
 		and = append(and, v)
 	}
 	if len(and) > 0 {
-		v = AST{Type: "And", Next: and}
-		v.Compact()
-		*out = v
+		*out = AST{Type: "And", Next: and}
+		out.Compact()
 		return true
 	}
 	return false
@@ -76,53 +74,39 @@ func (c *Compiler) term(out *AST) bool {
 
 func (c *Compiler) factor(out *AST) bool {
 	c.st()
-	defer c.quantifier(out)
-	return c.function(out) ||
-		c.s.Match("(") && c.expr(out) && c.s.Match(")") ||
-		c.value(out)
+	return (c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") ||
+		c.function(out) ||
+		c.value(out)) &&
+		(c.quantifier(out) || true)
 }
 
 func (c *Compiler) function(out *AST) bool {
-	if c.s.Match("EXPR1") {
-		var v AST
-		if c.factor(&v) && len(v.Next) == 3 {
-			*out = AST{Type: "Func", Text: "EXPR1", Next: v.Next}
-			return true
-		}
+	if c.s.Match("EXPR1") && c.factor(out) && len(out.Next) == 3 {
+		*out = AST{Type: "EXPR1", Next: out.Next}
+		return true
 	}
-	if c.s.Match("GROUP") {
-		var v AST
-		if c.factor(&v) {
-			*out = AST{Type: "Func", Text: "GROUP", Next: v.NextOrRoot()}
-			return true
-		}
+	if c.s.Match("GROUP") && c.factor(out) {
+		*out = AST{Type: "GROUP", Next: out.NextOrRoot()}
+		return true
 	}
-	if c.s.Match("UNTIL") {
-		var v AST
-		if c.factor(&v) {
-			*out = AST{Type: "Func", Text: "UNTIL", Next: []AST{v}}
-			return true
-		}
+	if c.s.Match("UNTIL") && c.factor(out) {
+		*out = AST{Type: "UNTIL", Next: []AST{*out}}
+		return true
 	}
-	if c.s.Match("MATCH") {
-		var v AST
-		if c.factor(&v) {
-			*out = AST{Type: "Func", Text: "MATCH", Next: []AST{v}}
-			return true
-		}
+	if c.s.Match("MATCH") && c.factor(out) {
+		*out = AST{Type: "MATCH", Next: []AST{*out}}
+		return true
 	}
 	return false
 }
 
 func (c *Compiler) quantifier(out *AST) bool {
-	m := c.s.Mark()
 	c.st()
 	if m := c.s.Mark(); c.s.MatchChar("*+?") {
-		*out = AST{Type: "Quant", Text: c.s.Text(m), Next: []AST{*out}}
+		*out = AST{Type: c.s.Text(m), Next: []AST{*out}}
 		return true
 	}
-	c.s.Move(m)
-	return true
+	return false
 }
 
 func (c *Compiler) value(out *AST) bool {
@@ -130,7 +114,7 @@ func (c *Compiler) value(out *AST) bool {
 }
 
 func (c *Compiler) ident(out *AST) bool {
-	if m := c.s.Mark(); c.regex(reIden) {
+	if m := c.s.Mark(); c.matchRegex(reIden) {
 		*out = AST{Type: "Ident", Text: c.s.Text(m)}
 		return true
 	}
@@ -138,37 +122,55 @@ func (c *Compiler) ident(out *AST) bool {
 }
 
 func (c *Compiler) text(out *AST) bool {
-	if m := c.s.Mark(); c.regex(reText) {
-		t := c.s.Text(m)
-		t = t[1 : len(t)-1]
-		v := AST{Type: "Plain", Text: t}
-		if c.s.MatchChar("r") {
-			v = AST{Type: "Regex", Text: "^" + t}
-		}
-		if c.s.MatchChar("i") {
-			v = AST{Type: "Ignore", Next: []AST{v}}
-		}
-		*out = v
+	if c.plain(out) {
+		c.regexFlag(out)
+		c.ignoreFlag(out)
 		return true
 	}
 	return false
 }
 
-func (c *Compiler) regex(re *regexp.Regexp) bool {
+func (c *Compiler) plain(out *AST) bool {
+	if m := c.s.Mark(); c.matchRegex(reText) {
+		t := c.s.Text(m)
+		t = t[1 : len(t)-1]
+		*out = AST{Type: "Plain", Text: t}
+		return true
+	}
+	return false
+}
+
+func (c *Compiler) regexFlag(out *AST) bool {
+	if c.s.MatchChar("r") {
+		*out = AST{Type: "Regex", Text: "^" + out.Text}
+		return true
+	}
+	return false
+}
+
+func (c *Compiler) ignoreFlag(out *AST) bool {
+	if c.s.MatchChar("i") {
+		*out = AST{Type: "Ignore", Next: []AST{*out}}
+		return true
+	}
+	return false
+}
+
+func (c *Compiler) matchRegex(re *regexp.Regexp) bool {
 	if v := re.FindIndex(c.s); v != nil {
 		return c.s.Advance(v[1])
 	}
 	return false
 }
 
-// Space or Tab.
-func (c *Compiler) st() bool {
-	return c.s.WhileChar(" \t")
-}
-
 // Optional Space or Tab.
 func (c *Compiler) ost() bool {
 	return c.st() || true
+}
+
+// Space or Tab.
+func (c *Compiler) st() bool {
+	return c.s.WhileChar(" \t")
 }
 
 var reText = regexp.MustCompile(`^'([^'\\]|\\.)*'`)

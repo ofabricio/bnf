@@ -114,32 +114,32 @@ func ExampleCompile() {
 	//     [Stmt]
 	//         [Ident] l
 	//         [And]
-	//             [Quant] *
+	//             [*]
 	//                 [Ident] a
-	//             [Quant] +
+	//             [+]
 	//                 [Ident] b
-	//             [Quant] *
+	//             [*]
 	//                 [Or]
-	//                     [Quant] ?
+	//                     [?]
 	//                         [And]
 	//                             [Ident] c
 	//                             [Ident] d
 	//                     [Ident] e
 	//     [Stmt]
 	//         [Ident] m
-	//         [Func] EXPR1
+	//         [EXPR1]
 	//             [Ident] a
 	//             [Ident] b
 	//             [Ident] c
 	//     [Stmt]
 	//         [Ident] n
-	//         [Func] GROUP
+	//         [GROUP]
 	//             [Ident] a
 	//             [Ident] b
 	//             [Ident] c
 	//     [Stmt]
 	//         [Ident] o
-	//         [Func] MATCH
+	//         [MATCH]
 	//             [And]
 	//                 [Ident] a
 	//                 [Ident] b

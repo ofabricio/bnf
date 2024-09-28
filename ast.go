@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 )
 
 type AST struct {
@@ -32,23 +31,24 @@ func (a AST) Empty() bool {
 	return len(a.Next)+len(a.Type) == 0
 }
 
-func String(a AST) string {
-	var b strings.Builder
-	print(&b, a, "")
-	return b.String()
-}
-
 func Print(a AST) {
-	print(os.Stdout, a, "")
+	Write(os.Stdout, a)
 }
 
-func print(out io.Writer, a AST, pad string) {
+func Write(w io.Writer, a AST) {
+	write(w, a, 0)
+}
+
+func write(w io.Writer, a AST, depth int) {
+	for i := 0; i < depth; i++ {
+		fmt.Fprint(w, "    ")
+	}
 	if len(a.Text) == 0 {
-		fmt.Fprintf(out, "%s[%s]\n", pad, a.Type)
+		fmt.Fprintf(w, "[%s]\n", a.Type)
 	} else {
-		fmt.Fprintf(out, "%s[%s] %s\n", pad, a.Type, a.Text)
+		fmt.Fprintf(w, "[%s] %s\n", a.Type, a.Text)
 	}
 	for _, n := range a.Next {
-		print(out, n, pad+"    ")
+		write(w, n, depth+1)
 	}
 }

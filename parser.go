@@ -33,55 +33,19 @@ func (p *Parser) parse(bnf AST, out *AST) bool {
 		}
 	case "Stmt":
 		return p.parse(bnf.Next[1], out)
-	case "Func":
-		switch bnf.Text {
-		case "EXPR1":
-			var l, root, r AST
-			if p.parse(bnf.Next[0], &l) && p.parse(bnf.Next[1], &root) && p.parse(bnf.Next[2], &r) {
-				*out = AST{Type: "Expr", Text: root.Text, Next: []AST{l, r}}
-				return true
-			}
-		case "GROUP":
-			var g []AST
-			for _, n := range bnf.Next {
-				var v AST
-				if !p.parse(n, &v) {
-					return false
-				}
-				if !v.Empty() {
-					g = append(g, v)
-				}
-			}
-			*out = AST{Type: "Group", Next: g}
+	case "EXPR1":
+		var l, root, r AST
+		if p.parse(bnf.Next[0], &l) && p.parse(bnf.Next[1], &root) && p.parse(bnf.Next[2], &r) {
+			*out = AST{Type: "Expr", Text: root.Text, Next: []AST{l, r}}
 			return true
-		case "UNTIL":
-			m := p.s.Mark()
-			if p.match(bnf) {
-				*out = AST{Type: "Ident", Text: p.s.Text(m)}
-				return true
-			}
-		case "MATCH":
-			m := p.s.Mark()
-			if p.match(bnf) {
-				*out = AST{Type: "Ident", Text: p.s.Text(m)}
-				return true
-			}
 		}
+	case "GROUP":
+		return p.parseAnd(bnf, out)
 	case "And":
-		var and []AST
-		for _, n := range bnf.Next {
-			var v AST
-			if !p.parse(n, &v) {
-				return false
-			}
-			if !v.Empty() {
-				and = append(and, v)
-			}
+		if p.parseAnd(bnf, out) {
+			out.Compact()
+			return true
 		}
-		out.Next = and
-		out.Type = "Group"
-		out.Compact()
-		return true
 	case "Or":
 		m := p.s.Mark()
 		for _, n := range bnf.Next {
@@ -90,59 +54,12 @@ func (p *Parser) parse(bnf AST, out *AST) bool {
 			}
 			p.s.Move(m)
 		}
-	case "Quant":
-		switch bnf.Text {
-		case "?":
-			return p.parse(bnf.Next[0], out) || true
-		case "*":
-			c := 0
-			for {
-				var v AST
-				if !p.parse(bnf.Next[0], &v) {
-					break
-				}
-				if !v.Empty() {
-					out.Next = append(out.Next, v)
-				}
-				c++
-			}
-			out.Compact()
-			if len(out.Next) > 0 {
-				out.Type = "Group"
-			}
-			return c >= 0
-		case "+":
-			c := 0
-			for {
-				var v AST
-				if !p.parse(bnf.Next[0], &v) {
-					break
-				}
-				if !v.Empty() {
-					out.Next = append(out.Next, v)
-				}
-				c++
-			}
-			out.Compact()
-			if len(out.Next) > 0 {
-				out.Type = "Group"
-			}
-			return c > 0
-		}
-	case "Plain":
-		if m := p.s.Mark(); p.s.Match(bnf.Text) {
-			out.Text = p.s.Text(m)
-			out.Type = "Ident"
-			return true
-		}
-	case "Regex":
-		if v := regexp.MustCompile(bnf.Text).FindIndex(p.s); v != nil {
-			m := p.s.Mark()
-			p.s.Advance(v[1])
-			out.Text = p.s.Text(m)
-			out.Type = "Ident"
-			return true
-		}
+	case "?":
+		return p.parse(bnf.Next[0], out) || true
+	case "*":
+		return p.parseWhile(bnf.Next[0], out) >= 0
+	case "+":
+		return p.parseWhile(bnf.Next[0], out) > 0
 	case "Ident":
 		switch bnf.Text {
 		case "EOF":
@@ -153,9 +70,13 @@ func (p *Parser) parse(bnf AST, out *AST) bool {
 				return p.parse(stmt, out)
 			}
 		}
+	case "UNTIL", "MATCH", "Plain", "Regex":
+		if m := p.s.Mark(); p.match(bnf) {
+			*out = AST{Type: "Ident", Text: p.s.Text(m)}
+			return true
+		}
 	case "Ignore":
-		var ignored AST
-		return p.parse(bnf.Next[0], &ignored)
+		return p.match(bnf.Next[0])
 	}
 	return false
 }
@@ -168,33 +89,23 @@ func (p *Parser) match(bnf AST) bool {
 		}
 	case "Stmt":
 		return p.match(bnf.Next[1])
-	case "Func":
-		switch bnf.Text {
-		case "EXPR1":
-			return p.match(bnf.Next[0]) && p.match(bnf.Next[1]) && p.match(bnf.Next[2])
-		case "GROUP":
-			for _, n := range bnf.Next {
-				if !p.match(n) {
-					return false
-				}
+	case "EXPR1":
+		return p.match(bnf.Next[0]) && p.match(bnf.Next[1]) && p.match(bnf.Next[2])
+	case "UNTIL":
+		c := 0
+		for p.s.More() {
+			m := p.s.Mark()
+			if p.match(bnf.Next[0]) {
+				p.s.Move(m)
+				break
 			}
-			return true
-		case "UNTIL":
-			c := 0
-			for p.s.More() {
-				m := p.s.Mark()
-				if p.match(bnf.Next[0]) {
-					p.s.Move(m)
-					break
-				}
-				p.s.Next()
-				c++
-			}
-			return c > 0
-		case "MATCH":
-			return p.match(bnf.Next[0])
+			p.s.Next()
+			c++
 		}
-	case "And":
+		return c > 0
+	case "MATCH":
+		return p.match(bnf.Next[0])
+	case "And", "GROUP":
 		for _, n := range bnf.Next {
 			if !p.match(n) {
 				return false
@@ -209,23 +120,20 @@ func (p *Parser) match(bnf AST) bool {
 			}
 			p.s.Move(m)
 		}
-	case "Quant":
-		switch bnf.Text {
-		case "?":
-			return p.match(bnf.Next[0]) || true
-		case "*":
-			c := 0
-			for p.match(bnf.Next[0]) {
-				c++
-			}
-			return c >= 0
-		case "+":
-			c := 0
-			for p.match(bnf.Next[0]) {
-				c++
-			}
-			return c > 0
+	case "?":
+		return p.match(bnf.Next[0]) || true
+	case "*":
+		c := 0
+		for p.match(bnf.Next[0]) {
+			c++
 		}
+		return c >= 0
+	case "+":
+		c := 0
+		for p.match(bnf.Next[0]) {
+			c++
+		}
+		return c > 0
 	case "Plain":
 		return p.s.Match(bnf.Text)
 	case "Regex":
@@ -234,6 +142,10 @@ func (p *Parser) match(bnf AST) bool {
 			return true
 		}
 	case "Ident":
+		switch bnf.Text {
+		case "EOF":
+			return p.s.Empty()
+		}
 		for _, stmt := range p.bnf.Next {
 			if stmt.Next[0].Text == bnf.Text {
 				return p.match(stmt)
@@ -243,6 +155,39 @@ func (p *Parser) match(bnf AST) bool {
 		return p.match(bnf.Next[0])
 	}
 	return false
+}
+
+func (p *Parser) parseWhile(bnf AST, out *AST) int {
+	for {
+		var v AST
+		if !p.parse(bnf, &v) {
+			break
+		}
+		if !v.Empty() {
+			out.Next = append(out.Next, v)
+		}
+	}
+	c := len(out.Next)
+	out.Compact()
+	if len(out.Next) > 0 {
+		out.Type = "Group"
+	}
+	return c
+}
+
+func (p *Parser) parseAnd(bnf AST, out *AST) bool {
+	var and []AST
+	for _, n := range bnf.Next {
+		var v AST
+		if !p.parse(n, &v) {
+			return false
+		}
+		if !v.Empty() {
+			and = append(and, v)
+		}
+	}
+	*out = AST{Type: "Group", Next: and}
+	return true
 }
 
 // Flatten returns a flat list of nodes. The
