@@ -42,7 +42,7 @@ func main() {
 
 ## Example 2
 
-Parsing a simple Go function. [Go Playground](https://go.dev/play/p/eEtoeR1eCFy)
+Parsing a simple Go function. [Go Playground](https://go.dev/play/p/s9rV81zB8yf)
 
 ```go
 import "github.com/ofabricio/bnf"
@@ -57,7 +57,7 @@ func main() {
 
 	theBNF := `
 	    root = ws func
-	    func = 'func'i ws name '('i args ')'i ws '{'i ws body ws '}'i
+	    func = 'func'i ws name '('i GROUP(args) ')'i ws '{'i ws GROUP(body) ws '}'i
 	    args = name ws name
 	    body = name '.' name '('i name ')'i
 	    name = '\w+'r

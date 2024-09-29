@@ -8,9 +8,12 @@ import (
 )
 
 func Parse(bnf AST, src string) AST {
-	var out AST
+	var out []AST
 	NewParser(bnf, src).Parse(&out)
-	return out
+	if len(out) == 1 {
+		return out[0]
+	}
+	return AST{Type: "Group", Next: out}
 }
 
 func NewParser(bnf AST, src string) *Parser {
@@ -22,11 +25,11 @@ type Parser struct {
 	bnf AST // Root BNF.
 }
 
-func (p *Parser) Parse(out *AST) bool {
+func (p *Parser) Parse(out *[]AST) bool {
 	return p.parse(p.bnf, out)
 }
 
-func (p *Parser) parse(bnf AST, out *AST) bool {
+func (p *Parser) parse(bnf AST, out *[]AST) bool {
 	switch bnf.Type {
 	case "Root":
 		for _, stmt := range bnf.Next {
@@ -35,22 +38,35 @@ func (p *Parser) parse(bnf AST, out *AST) bool {
 	case "Stmt":
 		return p.parse(bnf.Next[1], out)
 	case "EXPR1":
-		var l, root, r AST
-		if p.parse(bnf.Next[0], &l) && p.parse(bnf.Next[1], &root) && p.parse(bnf.Next[2], &r) {
-			*out = AST{Type: "Expr", Text: root.Text, Next: []AST{l, r}}
+		var l, root, r []AST
+		if exp := bnf.Next[0]; p.parse(exp.Next[0], &l) && p.parse(exp.Next[1], &root) && p.parse(exp.Next[2], &r) {
+			*out = append(*out, AST{Type: "Expr", Text: root[0].Text, Next: append(l, r...)})
 			return true
 		}
 	case "GROUP":
-		return p.parseAnd(bnf, out)
-	case "And":
-		if p.parseAnd(bnf, out) {
-			out.Compact()
-			return true
+		var v []AST
+		for _, n := range bnf.Next {
+			if !p.parse(n, &v) {
+				return false
+			}
 		}
+		*out = append(*out, AST{Type: "Group", Next: v})
+		return true
+	case "And":
+		var v []AST
+		for _, n := range bnf.Next {
+			if !p.parse(n, &v) {
+				return false
+			}
+		}
+		*out = append(*out, v...)
+		return true
 	case "Or":
 		m := p.s.Mark()
 		for _, n := range bnf.Next {
-			if p.parse(n, out) {
+			var v []AST
+			if p.parse(n, &v) {
+				*out = append(*out, v...)
 				return true
 			}
 			p.s.Move(m)
@@ -58,14 +74,22 @@ func (p *Parser) parse(bnf AST, out *AST) bool {
 	case "?":
 		return p.parse(bnf.Next[0], out) || true
 	case "*":
-		return p.parseWhile(bnf.Next[0], out) >= 0
+		c := 0
+		for p.parse(bnf.Next[0], out) {
+			c++
+		}
+		return c >= 0
 	case "+":
-		return p.parseWhile(bnf.Next[0], out) > 0
+		c := 0
+		for p.parse(bnf.Next[0], out) {
+			c++
+		}
+		return c > 0
 	case "Ident":
 		return p.parseIdent(bnf, out) || p.matchDefaultIdent(bnf)
 	case "UNTIL", "MATCH", "Plain", "Regex":
 		if m := p.s.Mark(); p.match(bnf) {
-			*out = AST{Type: "Ident", Text: p.s.Text(m)}
+			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})
 			return true
 		}
 	case "Ignore":
@@ -140,7 +164,7 @@ func (p *Parser) match(bnf AST) bool {
 	return false
 }
 
-func (p *Parser) parseIdent(bnf AST, out *AST) bool {
+func (p *Parser) parseIdent(bnf AST, out *[]AST) bool {
 	for _, stmt := range p.bnf.Next {
 		if stmt.Next[0].Text == bnf.Text {
 			return p.parse(stmt, out)
@@ -156,39 +180,6 @@ func (p *Parser) matchIdent(bnf AST) bool {
 		}
 	}
 	return false
-}
-
-func (p *Parser) parseWhile(bnf AST, out *AST) int {
-	for {
-		var v AST
-		if !p.parse(bnf, &v) {
-			break
-		}
-		if !v.Empty() {
-			out.Next = append(out.Next, v)
-		}
-	}
-	c := len(out.Next)
-	out.Compact()
-	if len(out.Next) > 0 {
-		out.Type = "Group"
-	}
-	return c
-}
-
-func (p *Parser) parseAnd(bnf AST, out *AST) bool {
-	var and []AST
-	for _, n := range bnf.Next {
-		var v AST
-		if !p.parse(n, &v) {
-			return false
-		}
-		if !v.Empty() {
-			and = append(and, v)
-		}
-	}
-	*out = AST{Type: "Group", Next: and}
-	return true
 }
 
 func (p *Parser) matchDefaultIdent(bnf AST) bool {

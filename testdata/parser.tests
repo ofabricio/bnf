@@ -57,9 +57,8 @@ root = 'One'* 'Two' ' 'i 'One'* 'Two' ' 'i 'One'* 'Two'
 [Group]
     [Ident] One
     [Ident] Two
-    [Group]
-        [Ident] One
-        [Ident] One
+    [Ident] One
+    [Ident] One
     [Ident] Two
     [Ident] Two
 
@@ -77,9 +76,8 @@ root = 'One'+ 'Two' ' 'i 'One'+ 'Two' ' 'i ( 'One'+ | 'Two' )
 [Group]
     [Ident] One
     [Ident] Two
-    [Group]
-        [Ident] One
-        [Ident] One
+    [Ident] One
+    [Ident] One
     [Ident] Two
     [Ident] Two
 
@@ -138,7 +136,7 @@ OneTwo
 root = UNTIL('One')
 
 [Then]
-[]
+[Group]
 
 
 [Test]
@@ -154,9 +152,8 @@ root = MATCH('One'+) ' 'i 'One'+
 [Then]
 [Group]
     [Ident] OneOne
-    [Group]
-        [Ident] One
-        [Ident] One
+    [Ident] One
+    [Ident] One
 
 
 [Test]

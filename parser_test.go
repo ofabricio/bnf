@@ -47,7 +47,7 @@ func Example_group() {
 
 	BNF := `
 	    root = ws func
-	    func = 'func'i ws name '('i args ')'i ws '{'i ws body ws '}'i
+	    func = 'func'i ws name '('i GROUP(args) ')'i ws '{'i ws GROUP(body) ws '}'i
 	    args = name ws name
 	    body = name '.' name '('i name ')'i
 	    name = '\w+'r
@@ -164,7 +164,7 @@ Eight
 	`
 
 	BNF := `
-	    root = (section section section section)+
+	    root = GROUP(section section section section)+
 	 section = ws tag '\n'ri UNTIL(ws (tag | EOF))
 		 tag = '[Test]'i | '[Give]'i | '[When]'i | '[Then]'i
 		  ws = '\s*'ri
@@ -197,7 +197,7 @@ func TestParser(t *testing.T) {
 	}
 
 	BNF := `
-	    root = (section section section section)+
+	    root = GROUP(section section section section)+
 	 section = ws tag '\n'ri UNTIL(ws (tag | EOF))
 		 tag = '[Test]'i | '[Give]'i | '[When]'i | '[Then]'i
 		  ws = '\s*'ri
@@ -226,7 +226,7 @@ func TestParser(t *testing.T) {
 		got := strings.TrimSpace(out.String())
 		exp := strings.TrimSpace(then)
 		if got != exp {
-			t.Errorf("\nTest:\n%s\nInp:\n%s\nBNF:\n%s\nGot:\n%s\nExp:\n%s\n", desc, give, when, got, exp)
+			t.Errorf("\n[Test]\n%s\n[Give]\n%s\n[When]\n%s\n[Then Got]\n%s\n[Expected]\n%s\n", desc, give, when, got, exp)
 		}
 		out.Reset()
 	}

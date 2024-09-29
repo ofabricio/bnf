@@ -81,20 +81,29 @@ func (c *Compiler) factor(out *AST) bool {
 }
 
 func (c *Compiler) function(out *AST) bool {
-	if c.s.Match("EXPR1") && c.factor(out) && len(out.Next) == 3 {
-		*out = AST{Type: "EXPR1", Next: out.Next}
+	if c.s.Match("EXPR1") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
+		*out = AST{Type: "EXPR1", Next: []AST{*out}}
+		c.quantifier(out)
 		return true
 	}
-	if c.s.Match("GROUP") && c.factor(out) {
-		*out = AST{Type: "GROUP", Next: out.NextOrRoot()}
+	if c.s.Match("GROUP") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
+		*out = AST{Type: "GROUP", Next: []AST{*out}}
+		c.quantifier(out)
 		return true
 	}
-	if c.s.Match("UNTIL") && c.factor(out) {
+	if c.s.Match("UNTIL") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
 		*out = AST{Type: "UNTIL", Next: []AST{*out}}
+		c.quantifier(out)
 		return true
 	}
-	if c.s.Match("MATCH") && c.factor(out) {
+	if c.s.Match("MATCH") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
 		*out = AST{Type: "MATCH", Next: []AST{*out}}
+		c.quantifier(out)
+		return true
+	}
+	if c.s.Match("ROOT") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
+		*out = AST{Type: "ROOT", Next: []AST{*out}}
+		c.quantifier(out)
 		return true
 	}
 	return false

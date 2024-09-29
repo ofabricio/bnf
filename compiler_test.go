@@ -128,15 +128,17 @@ func ExampleCompile() {
 	//     [Stmt]
 	//         [Ident] m
 	//         [EXPR1]
-	//             [Ident] a
-	//             [Ident] b
-	//             [Ident] c
+	//             [And]
+	//                 [Ident] a
+	//                 [Ident] b
+	//                 [Ident] c
 	//     [Stmt]
 	//         [Ident] n
 	//         [GROUP]
-	//             [Ident] a
-	//             [Ident] b
-	//             [Ident] c
+	//             [And]
+	//                 [Ident] a
+	//                 [Ident] b
+	//                 [Ident] c
 	//     [Stmt]
 	//         [Ident] o
 	//         [MATCH]
