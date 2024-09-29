@@ -1,29 +1,31 @@
 # bnf
 
-Parse text using a BNF-like notation.
+Parse text using a [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form)-like notation.
 
-**Note:** this is still in a very early, unusable state.
+## Note
+
+This is still in a very early, unusable state.
 
 ## Example 1
 
-Parsing a simple expression. [Go Playground](https://go.dev/play/p/BIQMxf2LUcG)
+Parsing a simple expression. [Go Playground](https://go.dev/play/p/HFlZ7h_OlGl)
 
 ```go
 import "github.com/ofabricio/bnf"
 
 func main() {
 
-	theINP := `6+5*(4+3)*2`
+	INP := `6+5*(4+3)*2`
 
-	theBNF := `
+	BNF := `
 	    expr   = term   ROOT('+') expr | term
 	    term   = factor ROOT('*') term | factor
 	    factor = '('i expr ')'i | value
 	    value  = '\d+'r
 	`
 
-	b := bnf.Compile(theBNF)
-	v := bnf.Parse(b, theINP)
+	b := bnf.Compile(BNF)
+	v := bnf.Parse(b, INP)
 
 	bnf.Print(v)
 
@@ -42,20 +44,20 @@ func main() {
 
 ## Example 2
 
-Parsing a simple Go function. [Go Playground](https://go.dev/play/p/s9rV81zB8yf)
+Parsing a simple Go function. [Go Playground](https://go.dev/play/p/s3hGGgIT8fh)
 
 ```go
 import "github.com/ofabricio/bnf"
 
 func main() {
 
-	theINP := `
+	INP := `
 	    func Say(msg string) {
 	        fmt.Println(msg)
 	    }
 	`
 
-	theBNF := `
+	BNF := `
 	    root = ws func
 	    func = 'func'i ws name '('i GROUP(args) ')'i ws '{'i ws GROUP(body) ws '}'i
 	    args = name ws name
@@ -64,8 +66,8 @@ func main() {
 	      ws = '\s*'ri
 	`
 
-	b := bnf.Compile(theBNF)
-	v := bnf.Parse(b, theINP)
+	b := bnf.Compile(BNF)
+	v := bnf.Parse(b, INP)
 
 	bnf.Print(v)
 
@@ -97,14 +99,14 @@ func main() {
 
 ## Default identifiers
 
-These are identifiers that don't need to be defined in the BNF.
-If defined they will be overridden:
+These identifiers don't need to be defined in the BNF.
+If defined they will be overridden.
 
-```
-ws = ' \t\r\n'i
-sp = ' 'i
-st = ' \t'i
-nl = 'nl'i
-tb = '\t'i
-EOF
-```
+| Identifier | Description |
+| --- | --- |
+| `ws` | Match a whitespace character `'\s'ri` |
+| `sp` | Match a space character `' 'i` |
+| `st` | Match a space or tab character `'[ \t]'ri` |
+| `nl` | Match a newline character `'\n'ri` |
+| `tb` | Match a tab character `'\t'ri` |
+| `EOF` | Match if the scanner is at the end. |
