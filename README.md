@@ -6,7 +6,7 @@ Parse text using a BNF-like notation.
 
 ## Example 1
 
-Parsing a simple expression. [Go Playground](https://go.dev/play/p/w7o5Dtxw34I)
+Parsing a simple expression. [Go Playground](https://go.dev/play/p/BIQMxf2LUcG)
 
 ```go
 import "github.com/ofabricio/bnf"
@@ -16,8 +16,8 @@ func main() {
 	theINP := `6+5*(4+3)*2`
 
 	theBNF := `
-	    expr   = EXPR1(term   '+' expr) | term
-	    term   = EXPR1(factor '*' term) | factor
+	    expr   = term   ROOT('+') expr | term
+	    term   = factor ROOT('*') term | factor
 	    factor = '('i expr ')'i | value
 	    value  = '\d+'r
 	`
@@ -28,15 +28,15 @@ func main() {
 	bnf.Print(v)
 
 	// Output:
-	// [Expr] +
-	//     [Iden] 6
-	//     [Expr] *
-	//         [Iden] 5
-	//         [Expr] *
-	//             [Expr] +
-	//                 [Iden] 4
-	//                 [Iden] 3
-	//             [Iden] 2
+	// [Ident] +
+	//     [Ident] 6
+	//     [Ident] *
+	//         [Ident] 5
+	//         [Ident] *
+	//             [Ident] +
+	//                 [Ident] 4
+	//                 [Ident] 3
+	//             [Ident] 2
 }
 ```
 
@@ -90,11 +90,10 @@ func main() {
 | `'...'` | Match a plain text string. This emits a token. |
 | `'...'r` | The string is a Regular Expression. |
 | `'...'i` | Ignore the token (do not emit it). |
-| `EXPR1(a b c)` | Make the tokens `a b c` an expression where `b` will be the root token. |
+| `ROOT(a)` | Make the token `a` the root token. Works only in a logical AND operation. |
 | `GROUP(a b c)` | Group the tokens `a b c`. |
 | `UNTIL(a)` | Match any character until `a` and return the text until it. Does not include `a`. |
 | `MATCH(a)` | Match `a` and return the matched text. |
-
 
 ## Default identifiers
 

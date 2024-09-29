@@ -14,8 +14,8 @@ func Example_expr() {
 	INP := `6+5*(4+3)*2`
 
 	BNF := `
-	    expr   = EXPR1(term   '+' expr) | term
-	    term   = EXPR1(factor '*' term) | factor
+	    expr   = term   ROOT('+') expr | term
+	    term   = factor ROOT('*') term | factor
 	    factor = '('i expr ')'i | value
 	    value  = '\d+'r
 	`
@@ -26,12 +26,12 @@ func Example_expr() {
 	bnf.Print(v)
 
 	// Output:
-	// [Expr] +
+	// [Ident] +
 	//     [Ident] 6
-	//     [Expr] *
+	//     [Ident] *
 	//         [Ident] 5
-	//         [Expr] *
-	//             [Expr] +
+	//         [Ident] *
+	//             [Ident] +
 	//                 [Ident] 4
 	//                 [Ident] 3
 	//             [Ident] 2

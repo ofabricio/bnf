@@ -37,12 +37,8 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		}
 	case "Stmt":
 		return p.parse(bnf.Next[1], out)
-	case "EXPR1":
-		var l, root, r []AST
-		if exp := bnf.Next[0]; p.parse(exp.Next[0], &l) && p.parse(exp.Next[1], &root) && p.parse(exp.Next[2], &r) {
-			*out = append(*out, AST{Type: "Expr", Text: root[0].Text, Next: append(l, r...)})
-			return true
-		}
+	case "ROOT":
+		return p.parse(bnf.Next[0], out)
 	case "GROUP":
 		var v []AST
 		for _, n := range bnf.Next {
@@ -53,13 +49,21 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		*out = append(*out, AST{Type: "Group", Next: v})
 		return true
 	case "And":
-		var v []AST
+		var v, r []AST
 		for _, n := range bnf.Next {
-			if !p.parse(n, &v) {
+			vr := &v
+			if n.Type == "ROOT" {
+				vr = &r
+			}
+			if !p.parse(n, vr) {
 				return false
 			}
 		}
-		*out = append(*out, v...)
+		if len(r) > 0 {
+			*out = append(*out, AST{Type: r[0].Type, Text: r[0].Text, Next: v})
+		} else {
+			*out = append(*out, v...)
+		}
 		return true
 	case "Or":
 		m := p.s.Mark()
@@ -106,8 +110,8 @@ func (p *Parser) match(bnf AST) bool {
 		}
 	case "Stmt":
 		return p.match(bnf.Next[1])
-	case "EXPR1":
-		return p.match(bnf.Next[0]) && p.match(bnf.Next[1]) && p.match(bnf.Next[2])
+	case "ROOT":
+		return p.match(bnf.Next[0])
 	case "UNTIL":
 		c := 0
 		for p.s.More() {

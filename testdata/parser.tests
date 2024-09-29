@@ -30,7 +30,7 @@ root = 'One'i 'Two' 'Three'i 'Four'
 
 
 [Test]
-Test that "And" is using a new variable when looping, instead of out.Next
+Test that "And" is using a new variable when looping, instead of "out" directly.
 
 [Give]
 acbaab

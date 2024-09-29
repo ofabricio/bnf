@@ -19,7 +19,7 @@ func ExampleCompile() {
 		j = a ( b ( c | d ) | ( e | f ) g )
 		k = ( a | b ) ( c | d )
 		l = a * b+ ( ( c d ) ? | e )*
-		m = EXPR1( a b c )
+		m = a ROOT(b) c
 		n = GROUP( a b c )
 		o = MATCH( a b c )
 		p = 'a'i 'b'r 'c'ri
@@ -127,11 +127,11 @@ func ExampleCompile() {
 	//                     [Ident] e
 	//     [Stmt]
 	//         [Ident] m
-	//         [EXPR1]
-	//             [And]
-	//                 [Ident] a
+	//         [And]
+	//             [Ident] a
+	//             [ROOT]
 	//                 [Ident] b
-	//                 [Ident] c
+	//             [Ident] c
 	//     [Stmt]
 	//         [Ident] n
 	//         [GROUP]

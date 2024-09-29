@@ -81,8 +81,8 @@ func (c *Compiler) factor(out *AST) bool {
 }
 
 func (c *Compiler) function(out *AST) bool {
-	if c.s.Match("EXPR1") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
-		*out = AST{Type: "EXPR1", Next: []AST{*out}}
+	if c.s.Match("ROOT") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
+		*out = AST{Type: "ROOT", Next: []AST{*out}}
 		c.quantifier(out)
 		return true
 	}
