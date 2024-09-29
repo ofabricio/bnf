@@ -2,6 +2,7 @@ package bnf
 
 import (
 	"regexp"
+	"unicode"
 
 	"github.com/ofabricio/scan"
 )
@@ -61,15 +62,7 @@ func (p *Parser) parse(bnf AST, out *AST) bool {
 	case "+":
 		return p.parseWhile(bnf.Next[0], out) > 0
 	case "Ident":
-		switch bnf.Text {
-		case "EOF":
-			return p.s.Empty()
-		}
-		for _, stmt := range p.bnf.Next {
-			if stmt.Next[0].Text == bnf.Text {
-				return p.parse(stmt, out)
-			}
-		}
+		return p.parseIdent(bnf, out) || p.matchDefaultIdent(bnf)
 	case "UNTIL", "MATCH", "Plain", "Regex":
 		if m := p.s.Mark(); p.match(bnf) {
 			*out = AST{Type: "Ident", Text: p.s.Text(m)}
@@ -94,8 +87,7 @@ func (p *Parser) match(bnf AST) bool {
 	case "UNTIL":
 		c := 0
 		for p.s.More() {
-			m := p.s.Mark()
-			if p.match(bnf.Next[0]) {
+			if m := p.s.Mark(); p.match(bnf.Next[0]) {
 				p.s.Move(m)
 				break
 			}
@@ -138,21 +130,30 @@ func (p *Parser) match(bnf AST) bool {
 		return p.s.Match(bnf.Text)
 	case "Regex":
 		if v := regexp.MustCompile(bnf.Text).FindIndex(p.s); v != nil {
-			p.s.Advance(v[1])
-			return true
+			return p.s.Advance(v[1])
 		}
 	case "Ident":
-		switch bnf.Text {
-		case "EOF":
-			return p.s.Empty()
-		}
-		for _, stmt := range p.bnf.Next {
-			if stmt.Next[0].Text == bnf.Text {
-				return p.match(stmt)
-			}
-		}
+		return p.matchIdent(bnf) || p.matchDefaultIdent(bnf)
 	case "Ignore":
 		return p.match(bnf.Next[0])
+	}
+	return false
+}
+
+func (p *Parser) parseIdent(bnf AST, out *AST) bool {
+	for _, stmt := range p.bnf.Next {
+		if stmt.Next[0].Text == bnf.Text {
+			return p.parse(stmt, out)
+		}
+	}
+	return false
+}
+
+func (p *Parser) matchIdent(bnf AST) bool {
+	for _, stmt := range p.bnf.Next {
+		if stmt.Next[0].Text == bnf.Text {
+			return p.match(stmt)
+		}
 	}
 	return false
 }
@@ -188,6 +189,24 @@ func (p *Parser) parseAnd(bnf AST, out *AST) bool {
 	}
 	*out = AST{Type: "Group", Next: and}
 	return true
+}
+
+func (p *Parser) matchDefaultIdent(bnf AST) bool {
+	switch bnf.Text {
+	case "EOF":
+		return p.s.Empty()
+	case "ws":
+		return p.s.MatchFunc(unicode.IsSpace) // ' \t\r\n'
+	case "nl":
+		return p.s.MatchChar("\n")
+	case "sp":
+		return p.s.MatchChar(" ")
+	case "st":
+		return p.s.MatchChar(" \t")
+	case "tb":
+		return p.s.MatchChar("\t")
+	}
+	return false
 }
 
 // Flatten returns a flat list of nodes. The

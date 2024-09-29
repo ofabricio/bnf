@@ -94,3 +94,18 @@ func main() {
 | `GROUP(a b c)` | Group the tokens `a b c`. |
 | `UNTIL(a)` | Match any character until `a` and return the text until it. Does not include `a`. |
 | `MATCH(a)` | Match `a` and return the matched text. |
+
+
+## Default identifiers
+
+These are identifiers that don't need to be defined in the BNF.
+If defined they will be overridden:
+
+```
+ws = ' \t\r\n'i
+sp = ' 'i
+st = ' \t'i
+nl = 'nl'i
+tb = '\t'i
+EOF
+```
