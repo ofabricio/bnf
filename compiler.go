@@ -78,6 +78,7 @@ func (c *Compiler) factor(out *AST) bool {
 	return (c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") ||
 		c.function(out) ||
 		c.value(out)) &&
+		(c.typ(out) || true) &&
 		(c.quantifier(out) || true)
 }
 
@@ -113,6 +114,17 @@ func (c *Compiler) quantifier(out *AST) bool {
 	if m := c.s.Mark(); c.s.MatchChar("*+?") {
 		*out = AST{Type: c.s.Text(m), Next: []AST{*out}}
 		return true
+	}
+	return false
+}
+
+func (c *Compiler) typ(out *AST) bool {
+	if c.s.MatchChar(":") {
+		var id AST
+		if c.ident(&id) {
+			*out = AST{Type: "Type", Text: id.Text, Next: []AST{*out}}
+			return true
+		}
 	}
 	return false
 }

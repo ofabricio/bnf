@@ -52,7 +52,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		var v, r []AST
 		for _, n := range bnf.Next {
 			vr := &v
-			if n.Type == "ROOT" {
+			if n.Type == "ROOT" || n.Type == "Type" && n.Next[0].Type == "ROOT" {
 				vr = &r
 			}
 			if !p.parse(n, vr) {
@@ -89,6 +89,13 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 			c++
 		}
 		return c > 0
+	case "Type":
+		var v []AST
+		if p.parse(bnf.Next[0], &v) {
+			v[0].Type = bnf.Text
+			*out = append(*out, v[0])
+			return true
+		}
 	case "Ident":
 		return p.parseIdent(bnf, out) || p.matchDefaultIdent(bnf)
 	case "NOT", "MATCH", "Plain", "Regex":
@@ -155,6 +162,8 @@ func (p *Parser) match(bnf AST) bool {
 		if v := regexp.MustCompile(bnf.Text).FindIndex(p.s); v != nil {
 			return p.s.Advance(v[1])
 		}
+	case "Type":
+		return p.match(bnf.Next[0])
 	case "Ident":
 		return p.matchIdent(bnf) || p.matchDefaultIdent(bnf)
 	case "Ignore":

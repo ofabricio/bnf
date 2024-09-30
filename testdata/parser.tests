@@ -270,3 +270,63 @@ root = SCAN(tag)
 [Group]
     [Ident] {name}
     [Ident] {count}
+
+
+[Test]
+Test Type.
+
+[Give]
+6+5*(4+3)*2
+
+[When]
+expr   = term   ROOT('+'):Opr expr | term
+term   = factor ROOT('*'):Opr term | factor
+factor = '('i expr ')'i | value:Val
+value  = '\d+'r
+
+[Then]
+[Opr] +
+    [Val] 6
+    [Opr] *
+        [Val] 5
+        [Opr] *
+            [Opr] +
+                [Val] 4
+                [Val] 3
+            [Val] 2
+
+
+[Test]
+Test Type and GROUP.
+
+[Give]
+abcde
+
+[When]
+root = 'a' GROUP('b' 'c' 'd'):G 'e'
+
+[Then]
+[Group]
+    [Ident] a
+    [G]
+        [Ident] b
+        [Ident] c
+        [Ident] d
+    [Ident] e
+
+
+[Test]
+Test Type and strings.
+
+[Give]
+2+3
+
+[When]
+root = num '+':Opr num
+ num = '\w+'r:Val
+
+[Then]
+[Group]
+    [Val] 2
+    [Opr] +
+    [Val] 3
