@@ -91,7 +91,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		return c > 0
 	case "Ident":
 		return p.parseIdent(bnf, out) || p.matchDefaultIdent(bnf)
-	case "UNTIL", "MATCH", "Plain", "Regex":
+	case "NOT", "MATCH", "Plain", "Regex":
 		if m := p.s.Mark(); p.match(bnf) {
 			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})
 			return true
@@ -112,17 +112,12 @@ func (p *Parser) match(bnf AST) bool {
 		return p.match(bnf.Next[1])
 	case "ROOT":
 		return p.match(bnf.Next[0])
-	case "UNTIL":
-		c := 0
-		for p.s.More() {
-			if m := p.s.Mark(); p.match(bnf.Next[0]) {
-				p.s.Move(m)
-				break
-			}
-			p.s.Next()
-			c++
+	case "NOT":
+		if m := p.s.Mark(); p.match(bnf.Next[0]) {
+			p.s.Move(m)
+			return false
 		}
-		return c > 0
+		return p.s.Next()
 	case "MATCH":
 		return p.match(bnf.Next[0])
 	case "And", "GROUP":

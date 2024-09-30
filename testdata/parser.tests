@@ -101,45 +101,6 @@ root = 'One'? 'Two' ' 'i 'One'? 'Two' ' 'i 'One'? 'OneTwo'
 
 
 [Test]
-Test that UNTIL matches until 'Two', not including it in the result.
-
-[Give]
-OneOneTwoOne
-
-[When]
-root = UNTIL('Two')
-
-[Then]
-[Ident] OneOne
-
-
-[Test]
-Test that UNTIL matches until EOF.
-
-[Give]
-OneOneTwoOne
-
-[When]
-root = UNTIL('Three')
-
-[Then]
-[Ident] OneOneTwoOne
-
-
-[Test]
-Test that UNTIL returns false if it doesn't advance.
-
-[Give]
-OneTwo
-
-[When]
-root = UNTIL('One')
-
-[Then]
-[Group]
-
-
-[Test]
 MATCH must match the tree and return the matched token.
 Notice the difference between 'One'+ with and without MATCH.
 
@@ -193,3 +154,76 @@ root = MATCH('One'* 'Two' ' 'i 'One'* 'Two' ' 'i 'One'* 'Two')
 
 [Then]
 [Ident] OneTwo OneOneTwo Two
+
+
+[Test]
+Test NOT.
+
+[Give]
+abc
+
+[When]
+root = NOT('b') NOT('a') NOT('c')?
+
+[Then]
+[Group]
+    [Ident] a
+    [Ident] b
+
+
+[Test]
+Test NOT and + quantifier.
+
+[Give]
+"Two"
+
+[When]
+root = '"' NOT('"')+ '"'
+
+[Then]
+[Group]
+    [Ident] "
+    [Ident] T
+    [Ident] w
+    [Ident] o
+    [Ident] "
+
+
+[Test]
+Test that NOT will match until 'Two', not including it in the result.
+
+[Give]
+OneOneTwoOne
+
+[When]
+root = MATCH(NOT('Two')+)
+
+[Then]
+[Ident] OneOne
+
+
+[Test]
+Test that NOT matches until EOF.
+
+[Give]
+OneOneTwoOne
+
+[When]
+root = MATCH(NOT('Three')+)
+
+[Then]
+[Ident] OneOneTwoOne
+
+
+[Test]
+Test that NOT returns false if it doesn't advance.
+
+[Give]
+OneTwo
+
+[When]
+root = NOT('One')
+
+[Then]
+[Group]
+

@@ -89,8 +89,8 @@ func (c *Compiler) function(out *AST) bool {
 		*out = AST{Type: "GROUP", Next: []AST{*out}}
 		return true
 	}
-	if c.s.Match("UNTIL") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
-		*out = AST{Type: "UNTIL", Next: []AST{*out}}
+	if c.s.Match("NOT") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
+		*out = AST{Type: "NOT", Next: []AST{*out}}
 		return true
 	}
 	if c.s.Match("MATCH") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {

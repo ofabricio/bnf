@@ -94,7 +94,7 @@ func main() {
 | `'...'i` | Ignore the token (do not emit it). |
 | `ROOT(a)` | Make the token `a` the root token. Works only in a logical AND operation. |
 | `GROUP(a b c)` | Group the tokens `a b c`. |
-| `UNTIL(a)` | Match any character until `a` and return the text until it. Does not include `a`. |
+| `NOT(a)` | Match any character that is not `a`. |
 | `MATCH(a)` | Match `a` and return the matched text. |
 
 ## Default identifiers

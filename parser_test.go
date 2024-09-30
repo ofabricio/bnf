@@ -165,7 +165,7 @@ Eight
 
 	BNF := `
 	    root = GROUP(section section section section)+
-	 section = ws tag '\n'ri UNTIL(ws (tag | EOF))
+	 section = ws tag '\n'ri MATCH( NOT(ws (tag | EOF))+ )
 		 tag = '[Test]'i | '[Give]'i | '[When]'i | '[Then]'i
 		  ws = '\s*'ri
 	`
@@ -198,7 +198,7 @@ func TestParser(t *testing.T) {
 
 	BNF := `
 	    root = GROUP(section section section section)+
-	 section = ws tag '\n'ri UNTIL(ws (tag | EOF))
+	 section = ws tag '\n'ri MATCH(NOT(ws (tag | EOF))+)
 		 tag = '[Test]'i | '[Give]'i | '[When]'i | '[Then]'i
 		  ws = '\s*'ri
 	`
