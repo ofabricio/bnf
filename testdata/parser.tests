@@ -1,4 +1,32 @@
 [Test]
+Test '...' string.
+
+[Give]
+\ \
+''
+'\''
+'one'
+'\'one\''
+'one\'two\'three'
+'\'one\'two\'three\''
+
+[When]
+root = '\\' sp '\\\\'r (nl str)*
+ str = '\'([^\'\\\\]|\\\\.)*\''r
+
+[Then]
+[Group]
+    [Ident] \
+    [Ident] \
+    [Ident] ''
+    [Ident] '\''
+    [Ident] 'one'
+    [Ident] '\'one\''
+    [Ident] 'one\'two\'three'
+    [Ident] '\'one\'two\'three\''
+
+
+[Test]
 Test that '...'r is a regular expression.
 
 [Give]
