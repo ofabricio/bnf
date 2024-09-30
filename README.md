@@ -109,4 +109,5 @@ If defined they will be overridden.
 | `st` | Match a space or tab character `'[ \t]'ri` |
 | `nl` | Match a newline character `'\n'ri` |
 | `tb` | Match a tab character `'\t'ri` |
+| `any` | Match any character `'.'ri` |
 | `EOF` | Match if the scanner is at the end. |

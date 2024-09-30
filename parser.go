@@ -190,6 +190,8 @@ func (p *Parser) matchDefaultIdent(bnf AST) bool {
 	switch bnf.Text {
 	case "EOF":
 		return p.s.Empty()
+	case "any":
+		return p.s.Next()
 	case "ws":
 		return p.s.MatchFunc(unicode.IsSpace) // ' \t\r\n'
 	case "nl":
