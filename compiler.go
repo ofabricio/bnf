@@ -83,27 +83,22 @@ func (c *Compiler) factor(out *AST) bool {
 func (c *Compiler) function(out *AST) bool {
 	if c.s.Match("ROOT") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
 		*out = AST{Type: "ROOT", Next: []AST{*out}}
-		c.quantifier(out)
 		return true
 	}
 	if c.s.Match("GROUP") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
 		*out = AST{Type: "GROUP", Next: []AST{*out}}
-		c.quantifier(out)
 		return true
 	}
 	if c.s.Match("UNTIL") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
 		*out = AST{Type: "UNTIL", Next: []AST{*out}}
-		c.quantifier(out)
 		return true
 	}
 	if c.s.Match("MATCH") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
 		*out = AST{Type: "MATCH", Next: []AST{*out}}
-		c.quantifier(out)
 		return true
 	}
 	if c.s.Match("ROOT") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
 		*out = AST{Type: "ROOT", Next: []AST{*out}}
-		c.quantifier(out)
 		return true
 	}
 	return false
