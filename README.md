@@ -92,10 +92,11 @@ func main() {
 | `'...'` | Match a plain text string. This emits a token. |
 | `'...'r` | The string is a Regular Expression. |
 | `'...'i` | Ignore the token (do not emit it). |
-| `ROOT(a)` | Make the token `a` the root token. Works only in a logical AND operation. |
-| `GROUP(a b c)` | Group the tokens `a b c`. |
+| `ROOT(a)` | Make the token a root token. Works only in a logical AND operation. |
+| `GROUP(a)` | Group the tokens. |
 | `NOT(a)` | Match any character that is not `a`. |
-| `MATCH(a)` | Match `a` and return the matched text. |
+| `MATCH(a)` | Return the matched text instead of a tree of tokens. |
+| `SCAN(a)` | Scan through the entire input text. Useful to collect data. |
 
 ## Default identifiers
 

@@ -227,3 +227,18 @@ root = NOT('One')
 [Then]
 [Group]
 
+
+[Test]
+Test SCAN.
+
+[Give]
+Hello, {name}! You have {count} messages.
+
+[When]
+root = SCAN(tag)
+ tag = MATCH('{' '\w+'r '}')
+
+[Then]
+[Group]
+    [Ident] {name}
+    [Ident] {count}
