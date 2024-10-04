@@ -53,7 +53,7 @@ func (c *Compiler) expr(out *AST) bool {
 	}
 	if len(or) > 0 {
 		*out = AST{Type: "Or", Next: or}
-		out.Compact()
+		compact(out)
 		return true
 	}
 	return false
@@ -67,7 +67,7 @@ func (c *Compiler) term(out *AST) bool {
 	}
 	if len(and) > 0 {
 		*out = AST{Type: "And", Next: and}
-		out.Compact()
+		compact(out)
 		return true
 	}
 	return false
@@ -123,6 +123,7 @@ func (c *Compiler) typ(out *AST) bool {
 		var id AST
 		if c.ident(&id) {
 			*out = AST{Type: "Type", Text: id.Text, Next: []AST{*out}}
+			swapRoot(out)
 			return true
 		}
 	}

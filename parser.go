@@ -52,7 +52,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		var v, r []AST
 		for _, n := range bnf.Next {
 			vr := &v
-			if n.Type == "ROOT" || n.Type == "Type" && n.Next[0].Type == "ROOT" {
+			if n.Type == "ROOT" {
 				vr = &r
 			}
 			if !p.parse(n, vr) {
