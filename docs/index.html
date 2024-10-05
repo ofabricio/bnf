@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNF Playground</title>
+    <script src="wasm_exec.js"></script>
+    <style>
+        html,
+        body,
+        textarea,
+        h1,
+        h2,
+        div,
+        img,
+        a {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        body,
+        html {
+            height: 100%;
+        }
+
+        body {
+            background: #aab7c2;
+            font-size: 1.2em;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: .5rem 0;
+            display: grid;
+            gap: .3rem;
+            grid-template-rows: auto minmax(20%, auto) 1fr;
+            grid-template-columns: 15% 1fr 1fr 15%;
+            grid-template-areas:
+                ". top top ."
+                ". query query ."
+                ". input output .";
+        }
+
+        h1 {
+            color: #000;
+            cursor: default;
+            font-size: 2.8em;
+        }
+
+        h2 {
+            color: #234d6f;
+            cursor: default;
+            font-size: 1em;
+        }
+
+        textarea {
+            background: #212121;
+            color: #efefef;
+            font-size: 1.2em;
+            font-family: monospace;
+            padding: 1rem;
+            outline: 0;
+            border: 0;
+            tab-size: 4;
+            line-height: 1.4em;
+        }
+
+        #top {
+            grid-area: top;
+            display: grid;
+            place-items: center;
+        }
+
+        #qry {
+            grid-area: query;
+            border-radius: 20px 20px 0px 0;
+        }
+
+        #inp {
+            grid-area: input;
+        }
+
+        #out {
+            grid-area: output;
+        }
+
+        .btns {
+            position: fixed;
+            right: .5rem;
+            top: .5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="btns">
+        <a title="Click to copy" href="javascript:copyShareLinkToClipboard()"><img
+                src="https://img.shields.io/badge/share-example-blue.svg" alt="Click to copy"></a>
+        <a title="Go to repository" href="https://github.com/ofabricio/bnf"><img
+                src="https://img.shields.io/badge/github-bnf-blue.svg?logo=github" alt="Go to repository"></a>
+    </div>
+
+    <div id="top">
+        <h1>BNF</h1>
+        <h2>PLAYGROUND</h2>
+    </div>
+
+    <textarea id="qry" wrap="off" onkeyup="applyQuery()">Loading...</textarea>
+    <textarea id="inp" wrap="off" onkeyup="applyQuery()">Loading...</textarea>
+    <textarea id="out" wrap="off">Loading...</textarea>
+
+    <script>
+        const qry = document.querySelector('#qry');
+        const inp = document.querySelector('#inp');
+        const out = document.querySelector('#out');
+
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("playground.wasm"), go.importObject).then((res) => {
+            go.run(res.instance);
+            initDefault();
+            initFromQueryString();
+            qry.focus();
+            applyQuery();
+        });
+
+        function initDefault() {
+            qry.value = `expr   = term   ROOT('+') expr | term
+term   = factor ROOT('*') term | factor
+factor = '('i expr ')'i | value
+value  = '\\d+'r
+`;
+            inp.value = '6+5*(4+3)*2\n';
+        }
+
+        function initFromQueryString() {
+            const params = new URL(window.location.href).searchParams;
+            if (params.has('d')) {
+                const data = JSON.parse(atob(params.get('d')));
+                qry.value = data.qry;
+                inp.value = data.inp;
+            }
+        }
+
+        function copyShareLinkToClipboard() {
+            const base = window.location.href.split('?')[0];
+            const data = JSON.stringify({ qry: qry.value, inp: inp.value });
+            const code = encodeURIComponent(btoa(data));
+            navigator.clipboard.writeText(`${base}?d=${code}`);
+        }
+
+        function applyQuery() {
+            out.value = bnfGet(inp.value, qry.value)
+        }
+    </script>
+</body>
+
+</html>
