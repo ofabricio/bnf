@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNF Playground</title>
+    <script src="wasm_exec.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            height: 100%;
+        }
+
+        body {
+            background: #fafafa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            color: #1a1a1a;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        header {
+            background: #fff;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+        }
+
+        .logo {
+            display: grid;
+            grid-auto-flow: column;
+            align-items: baseline;
+            gap: 0.75rem;
+            justify-content: start;
+
+            h1 {
+                font-size: 1.75rem;
+                font-weight: 600;
+                letter-spacing: -0.5px;
+                color: #1a1a1a;
+            }
+
+            h2 {
+                font-size: 0.875rem;
+                font-weight: 400;
+                color: #737373;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+        }
+
+        .header-actions {
+            display: grid;
+            justify-items: right;
+            grid-template-columns: 1fr auto;
+            gap: 0.5rem;
+
+            img {
+                display: block;
+                transition: opacity 0.15s ease;
+            }
+
+            a:hover img {
+                opacity: 0.8;
+            }
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 2fr;
+            gap: 1px;
+            background: #e5e5e5;
+        }
+
+        .section {
+            background: #fff;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        .section-header {
+            padding: 0.875rem 1.25rem;
+            background: #fafafa;
+            border-bottom: 1px solid #e5e5e5;
+            font-size: 0.813rem;
+            font-weight: 500;
+            color: #525252;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #query-section {
+            grid-column: 1 / -1;
+        }
+
+        textarea {
+            background: #fff;
+            color: #1a1a1a;
+            font-size: 0.938rem;
+            font-family: monospace, 'Consolas', 'SF Mono', 'Monaco', 'Liberation Mono', 'Courier New';
+            padding: 1.25rem;
+            outline: none;
+            border: none;
+            resize: none;
+            line-height: 1.6;
+        }
+
+        textarea::placeholder {
+            color: #a3a3a3;
+        }
+
+        @media (max-width: 512px) {
+            main {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 375px) {
+            header {
+                padding-top: 0.5rem;
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+
+                .logo {
+                    order: 2;
+                }
+
+                .header-actions {
+                    order: 1;
+                }
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <h1>BNF</h1>
+            <h2>Playground</h2>
+        </div>
+        <div class="header-actions">
+            <a title="Click to copy" href="javascript:copyShareLinkToClipboard()"><img
+                    src="https://img.shields.io/badge/share-example-blue.svg" alt="Click to copy"></a>
+            <a title="Go to repository" href="https://github.com/ofabricio/bnf"><img
+                    src="https://img.shields.io/badge/github-bnf-blue.svg?logo=github" alt="Go to repository"></a>
+        </div>
+    </header>
+
+    <main>
+        <div id="query-section" class="section">
+            <div class="section-header">Grammar</div>
+            <textarea id="qry" wrap="off" onkeyup="applyQuery()"
+                placeholder="Enter BNF grammar...">Loading...</textarea>
+        </div>
+
+        <div id="input-section" class="section">
+            <div class="section-header">Input</div>
+            <textarea id="inp" wrap="off" onkeyup="applyQuery()"
+                placeholder="Enter input to parse...">Loading...</textarea>
+        </div>
+
+        <div id="output-section" class="section">
+            <div class="section-header">Output</div>
+            <textarea id="out" wrap="off" readonly placeholder="Output will appear here...">Loading...</textarea>
+        </div>
+    </main>
+
+    <script>
+        const qry = document.querySelector('#qry');
+        const inp = document.querySelector('#inp');
+        const out = document.querySelector('#out');
+
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("playground.wasm"), go.importObject).then((res) => {
+            go.run(res.instance);
+            initDefault();
+            initFromQueryString();
+            qry.focus();
+            applyQuery();
+        });
+
+        function initDefault() {
+            qry.value = `
+expr = ROOT(term '+' expr) | term
+term = ROOT(fact '*' term) | fact
+fact = '('i expr ')'i | numb
+numb = '\\d+'r
+`.trimStart();
+            inp.value = '6+5*(4+3)*2\n';
+        }
+
+        function initFromQueryString() {
+            const params = new URL(window.location.href).searchParams;
+            if (params.has('d')) {
+                const data = JSON.parse(atob(params.get('d')));
+                qry.value = data.qry;
+                inp.value = data.inp;
+            }
+        }
+
+        function copyShareLinkToClipboard() {
+            const base = window.location.href.split('?')[0];
+            const data = JSON.stringify({ qry: qry.value, inp: inp.value });
+            const code = encodeURIComponent(btoa(data));
+            navigator.clipboard.writeText(`${base}?d=${code}`);
+        }
+
+        function applyQuery() {
+            out.value = bnfGet(inp.value, qry.value)
+        }
+    </script>
+</body>
+
+</html>
