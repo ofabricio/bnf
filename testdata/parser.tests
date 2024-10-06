@@ -356,3 +356,29 @@ root = num '+':Opr num
     [Val] 2
     [Opr] +
     [Val] 3
+
+
+[Test]
+Test MORE true.
+
+[Give]
+ab
+
+[When]
+root = 'a' MORE
+
+[Then]
+[Ident] a
+
+
+[Test]
+Test MORE false.
+
+[Give]
+a
+
+[When]
+root = 'a' MORE
+
+[Then]
+[Group]

@@ -115,6 +115,7 @@ If defined they will be overridden.
 | `tb` | Match a tab character `'\t'ri` |
 | `any` | Match any character `'.'ri` |
 | `EOF` | Match if the scanner is at the end. |
+| `MORE` | Match if the scanner has more to scan. |
 
 ## Introduction
 
