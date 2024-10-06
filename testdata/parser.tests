@@ -27,6 +27,19 @@ root = '\\' sp '\\\\'r (nl str)*
 
 
 [Test]
+Test that empty string '' doesn't lead to an infinite loop.
+
+[Give]
+a
+
+[When]
+v = ''*
+
+[Then]
+[Group]
+
+
+[Test]
 Test that '...'r is a regular expression.
 
 [Give]

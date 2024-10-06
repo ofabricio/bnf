@@ -156,6 +156,9 @@ func (c *Compiler) plain(out *AST) bool {
 		t := c.s.Text(m)
 		t = t[1 : len(t)-1]
 		t = strings.NewReplacer(`\'`, `'`, `\\`, `\`).Replace(t)
+		if t == "" {
+			return false
+		}
 		*out = AST{Type: "Plain", Text: t}
 		return true
 	}
