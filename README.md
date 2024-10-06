@@ -44,28 +44,26 @@ func main() {
 }
 ```
 
+Homework: try adding support for whitespaces, minus, division and negative numbers.
+
 ## Example 2
 
-Parsing a simple Go function. [Go Playground](https://go.dev/play/p/s3hGGgIT8fh)
+Parsing a simple JSON that supports only strings and no whitespaces.
+[Go Playground](https://go.dev/play/p/BBIwl0pENfW)
 
 ```go
 import "github.com/ofabricio/bnf"
 
 func main() {
 
-	INP := `
-	    func Say(msg string) {
-	        fmt.Println(msg)
-	    }
-	`
+	INP := `{"name":"John","addresses":[{"zip":"111"},{"zip":"222"}]}`
 
 	BNF := `
-	    root = ws func
-	    func = 'func'i ws name '('i GROUP(args) ')'i ws '{'i ws GROUP(body) ws '}'i
-	    args = name ws name
-	    body = name '.' name '('i name ')'i
-	    name = '\w+'r
-	      ws = '\s*'ri
+ 	    val = obj | arr | str
+	    obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
+	    arr = GROUP( '['i val (','i val)* ']'i ):Array
+	    okv = str ':'i val
+	    str = MATCH( '"' ( NOT('"' | '\\') | '\\' any )* '"' )
 	`
 
 	b := bnf.Compile(BNF)
@@ -74,18 +72,21 @@ func main() {
 	bnf.Print(v)
 
 	// Output:
-	// [Group]
-	//     [Ident] Say
-	//     [Group]
-	//         [Ident] msg
-	//         [Ident] string
-	//     [Group]
-	//         [Ident] fmt
-	//         [Ident] .
-	//         [Ident] Println
-	//         [Ident] msg
+	// [Object]
+	//     [Ident] "name"
+	//     [Ident] "John"
+	//     [Ident] "addresses"
+	//     [Array]
+	//         [Object]
+	//             [Ident] "zip"
+	//             [Ident] "111"
+	//         [Object]
+	//             [Ident] "zip"
+	//             [Ident] "222"
 }
 ```
+
+Homework: try adding support for whitespaces, numbers, booleans and null.
 
 ## Quick Reference
 
@@ -164,7 +165,7 @@ Noteworthy points:
 - Every terminal symbol emits a token.
 - There can be recursive calls, when a statement calls itself (see [Example 1](#example-1)).
 
-This is the struct returned by the `bnf.Parse(src)` function:
+This is the struct returned by the `bnf.Parse(b, src)` function:
 
 ```go
 type AST struct {
@@ -399,36 +400,6 @@ bnf.Print(v)
 //     [Ident] 3
 ```
 
-### SCAN
-
-This function scans through the entire text input; that is useful to collect data.
-
-```go
-INP := `The standard chunk of Lorem Ipsum used since the 1500s
-is reproduced below for those interested. Sections 1.10.32 and
-1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also
-reproduced in their exact original form, accompanied by English
-versions from the 1914 translation by H. Rackham.`
-
-BNF := `
-    root = SCAN( ver | num )
-     num = '\d+'r
-     ver = MATCH(num '.' num '.' num)
-`
-
-b := bnf.Compile(BNF)
-v := bnf.Parse(b, INP)
-
-bnf.Print(v)
-
-// Output:
-// [Group]
-//     [Ident] 1500
-//     [Ident] 1.10.32
-//     [Ident] 1.10.33
-//     [Ident] 1914
-```
-
 ### Quantifiers
 
 Quantifiers have the same behavior as in a regular expression.
@@ -477,4 +448,34 @@ bnf.Print(v)
 //     [Val] 2
 //     [Opr] +
 //     [Val] 3
+```
+
+### SCAN
+
+This function scans through the entire text input; this is useful to collect data.
+
+```go
+INP := `The standard chunk of Lorem Ipsum used since the 1500s
+is reproduced below for those interested. Sections 1.10.32 and
+1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also
+reproduced in their exact original form, accompanied by English
+versions from the 1914 translation by H. Rackham.`
+
+BNF := `
+    root = SCAN(ver | num)
+     num = '\d+'r
+     ver = MATCH(num '.' num '.' num)
+`
+
+b := bnf.Compile(BNF)
+v := bnf.Parse(b, INP)
+
+bnf.Print(v)
+
+// Output:
+// [Group]
+//     [Ident] 1500
+//     [Ident] 1.10.32
+//     [Ident] 1.10.33
+//     [Ident] 1914
 ```
