@@ -73,6 +73,19 @@ root = ( 'a' 'a' | '.'ri ) *
 
 
 [Test]
+Test that "And" is reseting the scanner when it fails.
+It would output: "[Ident] a [Ident] , [Ident] a" if not reseting.
+
+[Give]
+(a,a,)
+
+[When]
+root = '('i 'a' (',' 'a')* ')'i
+
+[Then]
+[Group]
+
+[Test]
 Test the * quantifier. It must match zero, one or many.
 
 [Give]

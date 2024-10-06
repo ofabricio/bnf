@@ -72,6 +72,37 @@ func Example_group() {
 	//         [Ident] msg
 }
 
+func Example_json() {
+
+	INP := `{"name":"John","addresses":[{"zip":"111"},{"zip":"222"}]}`
+
+	BNF := `
+ 	    val = obj | arr | str
+	    obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
+	    arr = GROUP( '['i val (','i val)* ']'i ):Array
+	    okv = str ':'i val
+	    str = MATCH( '"' ( NOT('"' | '\\') | '\\' any )* '"' )
+	`
+
+	b := bnf.Compile(BNF)
+	v := bnf.Parse(b, INP)
+
+	bnf.Print(v)
+
+	// Output:
+	// [Object]
+	//     [Ident] "name"
+	//     [Ident] "John"
+	//     [Ident] "addresses"
+	//     [Array]
+	//         [Object]
+	//             [Ident] "zip"
+	//             [Ident] "111"
+	//         [Object]
+	//             [Ident] "zip"
+	//             [Ident] "222"
+}
+
 func ExampleFlatten() {
 
 	INP := `abcd`

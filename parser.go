@@ -9,7 +9,9 @@ import (
 
 func Parse(bnf AST, src string) AST {
 	var out []AST
-	NewParser(bnf, src).Parse(&out)
+	if !NewParser(bnf, src).Parse(&out) {
+		return AST{Type: "Group", Next: nil}
+	}
 	if len(out) == 1 {
 		return out[0]
 	}
@@ -40,15 +42,18 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 	case "ROOT":
 		return p.parse(bnf.Next[0], out)
 	case "GROUP":
+		m := p.s.Mark()
 		var v []AST
 		for _, n := range bnf.Next {
 			if !p.parse(n, &v) {
+				p.s.Move(m)
 				return false
 			}
 		}
 		*out = append(*out, AST{Type: "Group", Next: v})
 		return true
 	case "And":
+		m := p.s.Mark()
 		var v, r []AST
 		for _, n := range bnf.Next {
 			vr := &v
@@ -56,6 +61,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 				vr = &r
 			}
 			if !p.parse(n, vr) {
+				p.s.Move(m)
 				return false
 			}
 		}
@@ -66,14 +72,12 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		}
 		return true
 	case "Or":
-		m := p.s.Mark()
 		for _, n := range bnf.Next {
 			var v []AST
 			if p.parse(n, &v) {
 				*out = append(*out, v...)
 				return true
 			}
-			p.s.Move(m)
 		}
 	case "?":
 		return p.parse(bnf.Next[0], out) || true
@@ -128,19 +132,19 @@ func (p *Parser) match(bnf AST) bool {
 	case "MATCH":
 		return p.match(bnf.Next[0])
 	case "And", "GROUP":
+		m := p.s.Mark()
 		for _, n := range bnf.Next {
 			if !p.match(n) {
+				p.s.Move(m)
 				return false
 			}
 		}
 		return true
 	case "Or":
-		m := p.s.Mark()
 		for _, n := range bnf.Next {
 			if p.match(n) {
 				return true
 			}
-			p.s.Move(m)
 		}
 	case "?":
 		return p.match(bnf.Next[0]) || true
