@@ -99,6 +99,7 @@ Homework: try adding support for whitespaces, numbers, booleans and null.
 | `GROUP(a)` | Group the tokens. |
 | `NOT(a)` | Match any character that is not `a`. |
 | `MATCH(a)` | Return the matched text instead of a tree of tokens. |
+| `TEXT(a)` | Add a text node in the tree. |
 | `SCAN(a)` | Scan through the entire input text. Useful to collect data. |
 
 ### Default identifiers
@@ -449,6 +450,40 @@ bnf.Print(v)
 //     [Val] 2
 //     [Opr] +
 //     [Val] 3
+```
+
+### TEXT
+
+This function adds a text node in the tree; this is useful to add a default value.
+
+It accepts either a plain string argument `TEXT('example')` or no argument `TEXT()` to add an empty node.
+
+```go
+INP := `
+    Key1=Val1
+    Key2=
+    Key3=Val3
+`
+
+BNF := `
+    root = SCAN( pair )
+    pair = val '='i ( val | TEXT('Default Val') )
+     val = '\w+'r
+`
+
+b := bnf.Compile(BNF)
+v := bnf.Parse(b, INP)
+
+bnf.Print(v)
+
+// Output:
+// [Group]
+//     [Ident] Key1
+//     [Ident] Val1
+//     [Ident] Key2
+//     [Ident] Default Val
+//     [Ident] Key3
+//     [Ident] Val3
 ```
 
 ### SCAN

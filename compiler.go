@@ -99,6 +99,10 @@ func (c *Compiler) function(out *AST) bool {
 		*out = AST{Type: "MATCH", Next: []AST{*out}}
 		return true
 	}
+	if c.s.Match("TEXT") && c.s.MatchChar("(") && (c.expr(out) || true) && c.s.MatchChar(")") {
+		*out = AST{Type: "TEXT", Next: []AST{*out}}
+		return true
+	}
 	if c.s.Match("SCAN") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
 		n := AST{Type: "Ident", Text: "any"}
 		o := AST{Type: "Or", Next: []AST{*out, n}}

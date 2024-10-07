@@ -41,6 +41,9 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		return p.parse(bnf.Next[1], out)
 	case "ROOT":
 		return p.parse(bnf.Next[0], out)
+	case "TEXT":
+		*out = append(*out, AST{Type: "Ident", Text: bnf.Next[0].Text})
+		return true
 	case "GROUP":
 		m := p.s.Mark()
 		var v []AST
@@ -129,6 +132,8 @@ func (p *Parser) match(bnf AST) bool {
 			return false
 		}
 		return p.s.Next()
+	case "TEXT":
+		return true
 	case "MATCH":
 		return p.match(bnf.Next[0])
 	case "And", "GROUP":
