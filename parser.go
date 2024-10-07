@@ -44,6 +44,12 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 	case "TEXT":
 		*out = append(*out, AST{Type: "Ident", Text: bnf.Next[0].Text})
 		return true
+	case "JOIN":
+		var v string
+		if p.join(bnf.Next[0], &v) {
+			*out = append(*out, AST{Type: "Ident", Text: v})
+			return true
+		}
 	case "GROUP":
 		m := p.s.Mark()
 		var v []AST
@@ -134,7 +140,7 @@ func (p *Parser) match(bnf AST) bool {
 		return p.s.Next()
 	case "TEXT":
 		return true
-	case "MATCH":
+	case "MATCH", "JOIN":
 		return p.match(bnf.Next[0])
 	case "And", "GROUP":
 		m := p.s.Mark()
@@ -181,6 +187,84 @@ func (p *Parser) match(bnf AST) bool {
 	return false
 }
 
+func (p *Parser) join(bnf AST, out *string) bool {
+	switch bnf.Type {
+	case "Root":
+		for _, stmt := range bnf.Next {
+			return p.join(stmt, out)
+		}
+	case "Stmt":
+		return p.join(bnf.Next[1], out)
+	case "ROOT":
+		return p.join(bnf.Next[0], out)
+	case "TEXT":
+		*out += bnf.Next[0].Text
+		return true
+	case "JOIN":
+		var v string
+		if p.join(bnf.Next[0], &v) {
+			*out += v
+			return true
+		}
+	case "GROUP":
+		m := *out
+		var v string
+		for _, n := range bnf.Next {
+			if !p.join(n, &v) {
+				*out = m
+				return false
+			}
+		}
+		*out += v
+		return true
+	case "And":
+		m := *out
+		var v string
+		for _, n := range bnf.Next {
+			if !p.join(n, &v) {
+				*out = m
+				return false
+			}
+		}
+		*out += v
+		return true
+	case "Or":
+		for _, n := range bnf.Next {
+			var v string
+			if p.join(n, &v) {
+				*out += v
+				return true
+			}
+		}
+	case "?":
+		return p.join(bnf.Next[0], out) || true
+	case "*":
+		c := 0
+		for p.join(bnf.Next[0], out) {
+			c++
+		}
+		return c >= 0
+	case "+":
+		c := 0
+		for p.join(bnf.Next[0], out) {
+			c++
+		}
+		return c > 0
+	case "Type":
+		return p.join(bnf.Next[0], out)
+	case "Ident":
+		return p.joinIdent(bnf, out) || p.matchDefaultIdent(bnf)
+	case "NOT", "MATCH", "Plain", "Regex":
+		if m := p.s.Mark(); p.match(bnf) {
+			*out += p.s.Text(m)
+			return true
+		}
+	case "Ignore":
+		return p.match(bnf.Next[0])
+	}
+	return false
+}
+
 func (p *Parser) parseIdent(bnf AST, out *[]AST) bool {
 	for _, stmt := range p.bnf.Next {
 		if stmt.Next[0].Text == bnf.Text {
@@ -194,6 +278,15 @@ func (p *Parser) matchIdent(bnf AST) bool {
 	for _, stmt := range p.bnf.Next {
 		if stmt.Next[0].Text == bnf.Text {
 			return p.match(stmt)
+		}
+	}
+	return false
+}
+
+func (p *Parser) joinIdent(bnf AST, out *string) bool {
+	for _, stmt := range p.bnf.Next {
+		if stmt.Next[0].Text == bnf.Text {
+			return p.join(stmt, out)
 		}
 	}
 	return false

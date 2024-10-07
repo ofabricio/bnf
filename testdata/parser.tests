@@ -431,3 +431,21 @@ pair = val '='i ( val | TEXT('Default Val') )
     [Ident] Default Val
     [Ident] Key3
     [Ident] Val3
+
+
+[Test]
+Test JOIN().
+Also show the difference between JOIN and MATCH.
+
+[Give]
+"One \"Two\" Three"
+"One \"Two\" Three"
+
+[When]
+root = MATCH(str) nl JOIN(str)
+ str = '"'i ( NOT('"' | '\\') | '\\'i MATCH(any) )* '"'i
+
+[Then]
+[Group]
+    [Ident] "One \"Two\" Three"
+    [Ident] One "Two" Three

@@ -98,7 +98,8 @@ Homework: try adding support for whitespaces, numbers, booleans and null.
 | `ROOT(a)` | Make the token a root token. Works only in a logical AND operation. |
 | `GROUP(a)` | Group the tokens. |
 | `NOT(a)` | Match any character that is not `a`. |
-| `MATCH(a)` | Return the matched text instead of a tree of tokens. |
+| `MATCH(a)` | Match the nodes into one. |
+| `JOIN(a)` | Join the nodes into one. |
 | `TEXT(a)` | Add a text node in the tree. |
 | `SCAN(a)` | Scan through the entire input text. Useful to collect data. |
 
@@ -334,15 +335,32 @@ bnf.Print(v)
 //     [Ident] Eight
 ```
 
-### MATCH
+### MATCH and JOIN
 
-This function emits a node with the matched text instead.
+Both functions join nodes into one. They emit a node with the matched text.
+
+But `MATCH` ignores many operators, like the [Ignore](#ignore) flag,
+and returns the text from the beginning to the end of the nodes.
+
+`JOIN` on the other hand doesn't ignore any operator, concatenating
+the text of all nodes.
+
+Hence `MATCH` is more efficient than `JOIN`,
+but `JOIN` is useful in other scenarios.
+
+In this example, the first string is returned intact with `MATCH`.
+The second string we ignore both the surrounding quotes and
+the escape character. This is only possible with `JOIN`.
 
 ```go
-INP := `OneTwoThreeFour`
+INP := `
+    "One \"Two\" Three"
+    "One \"Two\" Three"
+`
 
 BNF := `
-    root = 'One' 'Two' MATCH('Three' 'Four')
+    root = ws* MATCH(str) ws* JOIN(str)
+     str = '"'i ( NOT('"' | '\\') | '\\'i MATCH(any) )* '"'i
 `
 
 b := bnf.Compile(BNF)
@@ -352,10 +370,11 @@ bnf.Print(v)
 
 // Output:
 // [Group]
-//     [Ident] One
-//     [Ident] Two
-//     [Ident] ThreeFour
+//     [Ident] "One \"Two\" Three"
+//     [Ident] One "Two" Three
 ```
+
+Note `MATCH(any)`. It is forcing `any` to emit, because `any` is defined as `'.'ri`.
 
 ### NOT
 
