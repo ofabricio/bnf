@@ -1,4 +1,4 @@
-# bnf
+# BNF
 
 Parse text using a [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form)-like notation.
 
@@ -88,7 +88,13 @@ func main() {
 
 Homework: try adding support for whitespaces, numbers, booleans and null.
 
-## Quick Reference
+# Install
+
+```
+go get github.com/ofabricio/bnf
+```
+
+# Quick Reference
 
 | Operator | Description |
 | --- | --- |
@@ -122,7 +128,7 @@ If defined they will be overridden.
 | `EOF` | Match if the scanner is at the end. |
 | `MORE` | Match if the scanner has more to scan. |
 
-## Introduction
+# Introduction
 
 [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form) is a notation used to describe
 the syntax of programming languages or other formal languages. It describes how to combine
@@ -188,7 +194,7 @@ type AST struct {
 We can then parse that resulting tree to create something nicer, like a programming language;
 or we can simply use it to collect data from text like a (maybe more readable) regular expression.
 
-## Documentation
+# Documentation
 
 ### String
 
@@ -548,6 +554,8 @@ bnf.Print(v)
 ### SAVE and LOAD (Backreference)
 
 These functions work together to allow for Backreference.
+
+In this example we guarantee that the closing tags have the same name of the opening tags.
 
 ```go
 INP := `<a>hello<b>world</b></a>`

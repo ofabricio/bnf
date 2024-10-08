@@ -72,7 +72,7 @@ func ExampleFlatten() {
 
 func ExampleParse_testDataBNF() {
 
-	// This tests garantees that the testdata parsing is correct.
+	// This tests guarantees that the testdata parsing is correct.
 
 	INP := `
 [Test]
