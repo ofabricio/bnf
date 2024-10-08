@@ -449,3 +449,69 @@ root = MATCH(str) nl JOIN(str)
 [Group]
     [Ident] "One \"Two\" Three"
     [Ident] One "Two" Three
+
+
+[Test]
+Test SAVE and LOAD (Back Reference).
+
+[Give]
+<a>hello</a>
+
+[When]
+tag = MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>')
+  w = '\w+'r
+
+[Then]
+[Group]
+    [Ident] <a>
+    [Ident] hello
+    [Ident] </a>
+
+
+[Test]
+Test SAVE and LOAD (Back Reference) recursively.
+
+[Give]
+<a>hello<b>world</b></a>
+
+[When]
+tag = GROUP( MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>') )
+  w = '\w+'r
+
+[Then]
+[Group]
+    [Ident] <a>
+    [Ident] hello
+    [Group]
+        [Ident] <b>
+        [Ident] world
+        [Ident] </b>
+    [Ident] </a>
+
+
+[Test]
+Test SAVE and LOAD (Back Reference) recursively with MATCH.
+
+[Give]
+<a>hello<b>world</b></a>
+
+[When]
+tag = MATCH( '<' SAVE(w) '>' ( '\w+'r | tag )* '</' LOAD() '>' )
+  w = '\w+'r
+
+[Then]
+[Ident] <a>hello<b>world</b></a>
+
+
+[Test]
+Test SAVE and LOAD (Back Reference) recursively with JOIN.
+
+[Give]
+<a>hello<b>world</b></a>
+
+[When]
+tag = JOIN( '<' SAVE(w) '>' ( '\w+'r | tag )* '</' LOAD() '>' )
+  w = '\w+'r
+
+[Then]
+[Ident] <a>hello<b>world</b></a>

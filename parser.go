@@ -25,6 +25,7 @@ func NewParser(bnf AST, src string) *Parser {
 type Parser struct {
 	s   scan.Bytes
 	bnf AST // Root BNF.
+	sav string
 }
 
 func (p *Parser) Parse(out *[]AST) bool {
@@ -38,9 +39,19 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 			return p.parse(stmt, out)
 		}
 	case "Stmt":
-		return p.parse(bnf.Next[1], out)
+		s := p.sav
+		v := p.parse(bnf.Next[1], out)
+		p.sav = s
+		return v
 	case "ROOT":
 		return p.parse(bnf.Next[0], out)
+	case "SAVE":
+		if p.parse(bnf.Next[0], out) {
+			p.sav = (*out)[0].Text
+			return true
+		}
+	case "LOAD":
+		return p.parse(AST{Type: "Plain", Text: p.sav}, out)
 	case "TEXT":
 		*out = append(*out, AST{Type: "Ident", Text: bnf.Next[0].Text})
 		return true
@@ -129,9 +140,19 @@ func (p *Parser) match(bnf AST) bool {
 			return p.match(stmt)
 		}
 	case "Stmt":
-		return p.match(bnf.Next[1])
+		s := p.sav
+		v := p.match(bnf.Next[1])
+		p.sav = s
+		return v
 	case "ROOT":
 		return p.match(bnf.Next[0])
+	case "SAVE":
+		if m := p.s.Mark(); p.match(bnf.Next[0]) {
+			p.sav = p.s.Text(m)
+			return true
+		}
+	case "LOAD":
+		return p.s.Match(p.sav)
 	case "NOT":
 		if m := p.s.Mark(); p.match(bnf.Next[0]) {
 			p.s.Move(m)
@@ -194,9 +215,20 @@ func (p *Parser) join(bnf AST, out *string) bool {
 			return p.join(stmt, out)
 		}
 	case "Stmt":
-		return p.join(bnf.Next[1], out)
+		s := p.sav
+		v := p.join(bnf.Next[1], out)
+		p.sav = s
+		return v
 	case "ROOT":
 		return p.join(bnf.Next[0], out)
+	case "SAVE":
+		if v := ""; p.join(bnf.Next[0], &v) {
+			p.sav = v
+			*out += v
+			return true
+		}
+	case "LOAD":
+		return p.join(AST{Type: "Plain", Text: p.sav}, out)
 	case "TEXT":
 		*out += bnf.Next[0].Text
 		return true

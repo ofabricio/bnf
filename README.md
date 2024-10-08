@@ -101,6 +101,8 @@ Homework: try adding support for whitespaces, numbers, booleans and null.
 | `MATCH(a)` | Match the nodes into one. |
 | `JOIN(a)` | Join the nodes into one. |
 | `TEXT(a)` | Add a text node in the tree. |
+| `SAVE(a)` | Save a token to be loaded with `LOAD()`. |
+| `LOAD()` | Load a token saved with `SAVE()`. |
 | `SCAN(a)` | Scan through the entire input text. Useful to collect data. |
 
 ### Default identifiers
@@ -503,6 +505,34 @@ bnf.Print(v)
 //     [Ident] Default Val
 //     [Ident] Key3
 //     [Ident] Val3
+```
+
+### SAVE and LOAD (Backreference)
+
+These functions work together to allow for Backreference.
+
+```go
+INP := `<a>hello<b>world</b></a>`
+
+BNF := `
+    tag = GROUP( MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>') )
+      w = '\w+'r
+`
+
+b := bnf.Compile(BNF)
+v := bnf.Parse(b, INP)
+
+bnf.Print(v)
+
+// Output:
+// [Group]
+//     [Ident] <a>
+//     [Ident] hello
+//     [Group]
+//         [Ident] <b>
+//         [Ident] world
+//         [Ident] </b>
+//     [Ident] </a>
 ```
 
 ### SCAN

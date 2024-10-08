@@ -107,6 +107,14 @@ func (c *Compiler) function(out *AST) bool {
 		*out = AST{Type: "TEXT", Next: []AST{*out}}
 		return true
 	}
+	if c.s.Match("SAVE") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
+		*out = AST{Type: "SAVE", Next: []AST{*out}}
+		return true
+	}
+	if c.s.Match("LOAD") && c.s.MatchChar("(") && c.s.MatchChar(")") {
+		*out = AST{Type: "LOAD"}
+		return true
+	}
 	if c.s.Match("SCAN") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
 		n := AST{Type: "Ident", Text: "any"}
 		o := AST{Type: "Or", Next: []AST{*out, n}}
