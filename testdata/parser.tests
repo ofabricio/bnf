@@ -209,7 +209,7 @@ Test that NOT will match until 'Two', not including it in the result.
 OneOneTwoOne
 
 [When]
-root = JOIN(NOT('Two')+)
+root = MATCH(NOT('Two')+)
 
 [Then]
 [Ident] OneOne
@@ -222,7 +222,7 @@ Test that NOT matches until EOF.
 OneOneTwoOne
 
 [When]
-root = JOIN(NOT('Three')+)
+root = MATCH(NOT('Three')+)
 
 [Then]
 [Ident] OneOneTwoOne
@@ -249,7 +249,7 @@ Hello, {name}! You have {count} messages.
 
 [When]
 root = SCAN(tag)
- tag = JOIN('{' '\w+'r '}')
+ tag = MATCH('{' '\w+'r '}')
 
 [Then]
 [Group]
@@ -430,7 +430,7 @@ Test SAVE and LOAD (Back Reference).
 <a>hello</a>
 
 [When]
-tag = JOIN('<' SAVE(w) '>') ( '\w+'r | tag )* JOIN('</' LOAD() '>')
+tag = MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>')
   w = '\w+'r
 
 [Then]
@@ -447,7 +447,7 @@ Test SAVE and LOAD (Back Reference) recursively (subgroup).
 <a>hello<b>world</b></a>
 
 [When]
-tag = GROUP( JOIN('<' SAVE(w) '>') ( '\w+'r | tag )* JOIN('</' LOAD() '>') )
+tag = GROUP( MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>') )
   w = '\w+'r
 
 [Then]
@@ -476,6 +476,20 @@ tag = JOIN( '<' SAVE(w) '>' ( '\w+'r | tag )* '</' LOAD() '>' )
 
 
 [Test]
+Test SAVE and LOAD (Back Reference) recursively with global MATCH.
+
+[Give]
+<a>hello<b>world</b></a>
+
+[When]
+tag = MATCH( '<' SAVE(w) '>' ( '\w+'r | tag )* '</' LOAD() '>' )
+  w = '\w+'r
+
+[Then]
+[Ident] <a>hello<b>world</b></a>
+
+
+[Test]
 Test SCAN() README example.
 
 [Give]
@@ -488,7 +502,7 @@ versions from the 1914 translation by H. Rackham.
 [When]
 root = SCAN(ver | num)
  num = '\d+'r
- ver = JOIN(num '.' num '.' num)
+ ver = MATCH(num '.' num '.' num)
 
 [Then]
 [Group]
@@ -533,7 +547,7 @@ val = obj | arr | str
 obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
 arr = GROUP( '['i val (','i val)* ']'i ):Array
 okv = str ':'i val
-str = JOIN( '"' ( NOT('"' | '\\') | '\\' ANY )* '"' )
+str = MATCH( '"' ( NOT('"' | '\\') | '\\' ANY )* '"' )
 
 [Then]
 [Object]
@@ -547,3 +561,43 @@ str = JOIN( '"' ( NOT('"' | '\\') | '\\' ANY )* '"' )
         [Object]
             [Ident] "zip"
             [Ident] "222"
+
+
+[Test]
+Test JOIN Example.
+
+[Give]
+1+1 2+2 3+3 4+4
+
+[When]
+root = (num '+' num) sp JOIN(num '+' num) sp JOIN(num ROOT('+') num) sp JOIN(num '+'i num)
+ num = '\d+'r
+
+[Then]
+[Group]
+    [Ident] 1
+    [Ident] +
+    [Ident] 1
+    [Ident] 2+2
+    [Ident] +33
+    [Ident] 44
+
+
+[Test]
+Test MATCH Example.
+
+[Give]
+1+1 2+2 3+3 4+4
+
+[When]
+root = (num '+' num) sp MATCH(num '+' num) sp MATCH(num ROOT('+') num) sp MATCH(num '+'i num)
+ num = '\d+'r
+
+[Then]
+[Group]
+    [Ident] 1
+    [Ident] +
+    [Ident] 1
+    [Ident] 2+2
+    [Ident] 3+3
+    [Ident] 4+4

@@ -99,6 +99,10 @@ func (c *Compiler) function(out *AST) bool {
 		*out = AST{Type: "JOIN", Next: []AST{*out}}
 		return true
 	}
+	if c.s.Match("MATCH") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
+		*out = AST{Type: "MATCH", Next: []AST{*out}}
+		return true
+	}
 	if c.s.Match("TEXT") && c.s.MatchChar("(") && (c.expr(out) || true) && c.s.MatchChar(")") {
 		*out = AST{Type: "TEXT", Next: []AST{*out}}
 		return true

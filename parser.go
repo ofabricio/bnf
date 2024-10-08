@@ -63,6 +63,12 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 			*out = append(*out, AST{Type: "Ident", Text: join(v)})
 			return true
 		}
+	case "MATCH":
+		var v []AST
+		if m := p.s.Mark(); p.parse(bnf.Next[0], &v) {
+			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})
+			return true
+		}
 	case "GROUP":
 		var v []AST
 		for _, n := range bnf.Next {

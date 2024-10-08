@@ -63,7 +63,7 @@ func main() {
 	    obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
 	    arr = GROUP( '['i val (','i val)* ']'i ):Array
 	    okv = str ':'i val
-	    str = JOIN( '"' ( NOT('"' | '\\') | '\\' ANY )* '"' )
+	    str = MATCH( '"' ( NOT('"' | '\\') | '\\' ANY )* '"' )
 	`
 
 	b := bnf.Compile(BNF)
@@ -99,6 +99,7 @@ Homework: try adding support for whitespaces, numbers, booleans and null.
 | `GROUP(a)` | Group the tokens. |
 | `NOT(a)` | Match any character that is not `a`. |
 | `JOIN(a)` | Join nodes into one. |
+| `MATCH(a)` | Match nodes into one. |
 | `TEXT(a)` | Add a text node in the tree. |
 | `SAVE(a)` | Save a token to be loaded with `LOAD()`. |
 | `LOAD()` | Load a token saved with `SAVE()`. |
@@ -308,7 +309,10 @@ bnf.Print(v)
 
 ### GROUP
 
-This function groups nodes together.
+By default all matching tokens are emitted separatelly, one node for each matching token.
+This function groups these nodes together.
+
+Try removing the `GROUP` functions in the example below and see how the result changes.
 
 ```go
 INP := `OneTwoThreeFourFiveSixSevenEight`
@@ -339,13 +343,22 @@ bnf.Print(v)
 
 ### JOIN
 
-This function joins nodes into one.
+By default all matching tokens are emitted separatelly, one node for each matching token.
+This function joins these nodes into one. The order of the nodes matter.
+
+In the example below, note:
+- How `1+1` are emitted separatelly by default.
+- How `2+2` are joined into one node.
+- How `3+3` are joined in a strange order due to the [ROOT](#root) function,
+  that changes the order of the nodes.
+- How the `+` gets removed from `4+4` due to the [Ignore](#ignore) flag `i`.
 
 ```go
-INP := `OneOne OneOne`
+INP := `1+1 2+2 3+3 4+4`
 
 BNF := `
-    root = JOIN('One'+) ' 'i 'One'+
+    root = (num '+' num) sp JOIN(num '+' num) sp JOIN(num ROOT('+') num) sp JOIN(num '+'i num)
+     num = '\d+'r
 `
 
 b := bnf.Compile(BNF)
@@ -355,9 +368,52 @@ bnf.Print(v)
 
 // Output:
 // [Group]
-//     [Ident] OneOne
-//     [Ident] One
-//     [Ident] One
+//     [Ident] 1
+//     [Ident] +
+//     [Ident] 1
+//     [Ident] 2+2
+//     [Ident] +33
+//     [Ident] 44
+```
+
+### MATCH
+
+By default all matching tokens are emitted separatelly, one node for each matching token.
+This function matches these nodes into one.
+It takes the text between the first and the last matching token,
+returning a node with it.
+
+It is more efficient than [JOIN](#join), but some operators
+don't work with it, for example the [Ignore](#ignore) flag.
+
+In the example below, note:
+
+- How `1+1` are emitted separatelly by default.
+- How `2+2` are joined into one node.
+- How `3+3` are joined into one node even though [ROOT](#root) changes the order of the nodes.
+- How the `+` is not removed from `4+4` even though [Ignore](#ignore) flag `i` is present.
+
+```go
+INP := `1+1 2+2 3+3 4+4`
+
+BNF := `
+ root = (num '+' num) sp MATCH(num '+' num) sp MATCH(num ROOT('+') num) sp MATCH(num '+'i num)
+  num = '\d+'r
+`
+
+b := bnf.Compile(BNF)
+v := bnf.Parse(b, INP)
+
+bnf.Print(v)
+
+// Output:
+// [Group]
+//     [Ident] 1
+//     [Ident] +
+//     [Ident] 1
+//     [Ident] 2+2
+//     [Ident] 3+3
+//     [Ident] 4+4
 ```
 
 ### NOT
@@ -497,7 +553,7 @@ These functions work together to allow for Backreference.
 INP := `<a>hello<b>world</b></a>`
 
 BNF := `
-    tag = GROUP( JOIN('<' SAVE(w) '>') ( '\w+'r | tag )* JOIN('</' LOAD() '>') )
+    tag = GROUP( MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>') )
       w = '\w+'r
 `
 
@@ -531,7 +587,7 @@ versions from the 1914 translation by H. Rackham.`
 BNF := `
     root = SCAN(ver | num)
      num = '\d+'r
-     ver = JOIN(num '.' num '.' num)
+     ver = MATCH(num '.' num '.' num)
 `
 
 b := bnf.Compile(BNF)
