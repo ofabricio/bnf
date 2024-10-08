@@ -373,23 +373,23 @@ root = TEXT('Hello')
 Test TEXT() Example.
 
 [Give]
-Key1=Val1
+Key1=Value1
 Key2=
-Key3=Val3
+Key3=Value3
 
 [When]
 root = SCAN( pair )
-pair = val '='i ( val | TEXT('Default Val') )
+pair = val '='i ( val | TEXT('Default Value') )
  val = '\w+'r
 
 [Then]
 [Group]
     [Ident] Key1
-    [Ident] Val1
+    [Ident] Value1
     [Ident] Key2
-    [Ident] Default Val
+    [Ident] Default Value
     [Ident] Key3
-    [Ident] Val3
+    [Ident] Value3
 
 
 [Test]
@@ -497,3 +497,53 @@ root = SCAN(ver | num)
     [Ident] 1.10.33
     [Ident] 1914
 
+
+[Test]
+Test Example 1 (Expression).
+
+[Give]
+6+5*(4+3)*2
+
+[When]
+expr   = term   ROOT('+') expr | term
+term   = factor ROOT('*') term | factor
+factor = '('i expr ')'i | value
+value  = '\d+'r
+
+[Then]
+[Ident] +
+    [Ident] 6
+    [Ident] *
+        [Ident] 5
+        [Ident] *
+            [Ident] +
+                [Ident] 4
+                [Ident] 3
+            [Ident] 2
+
+
+[Test]
+Test Example 2 (JSON).
+
+[Give]
+{"name":"John","addresses":[{"zip":"111"},{"zip":"222"}]}
+
+[When]
+val = obj | arr | str
+obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
+arr = GROUP( '['i val (','i val)* ']'i ):Array
+okv = str ':'i val
+str = JOIN( '"' ( NOT('"' | '\\') | '\\' ANY )* '"' )
+
+[Then]
+[Object]
+    [Ident] "name"
+    [Ident] "John"
+    [Ident] "addresses"
+    [Array]
+        [Object]
+            [Ident] "zip"
+            [Ident] "111"
+        [Object]
+            [Ident] "zip"
+            [Ident] "222"

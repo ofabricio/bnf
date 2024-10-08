@@ -64,11 +64,9 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 			return true
 		}
 	case "GROUP":
-		m := p.s.Mark()
 		var v []AST
 		for _, n := range bnf.Next {
 			if !p.parse(n, &v) {
-				p.s.Move(m)
 				return false
 			}
 		}
@@ -122,26 +120,26 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 			*out = append(*out, v[0])
 			return true
 		}
-	case "Ident":
-		return p.parseIdent(bnf, out) || p.matchDefaultIdent(bnf) || p.matchDefaultIdentThatEmit(bnf, out)
-	case "Ignore":
-		var v []AST
-		if p.parse(bnf.Next[0], &v) {
-			return true
-		}
-	case "Regex":
-		if v := regexp.MustCompile(bnf.Text).FindIndex(p.s); v != nil {
-			m := p.s.Mark()
-			p.s.Advance(v[1])
-			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})
-			return true
-		}
 	case "NOT":
 		var v []AST
 		if m := p.s.Mark(); p.parse(bnf.Next[0], &v) {
 			p.s.Move(m)
 			return false
 		} else if p.s.Next() {
+			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})
+			return true
+		}
+	case "Ignore":
+		var v []AST
+		return p.parse(bnf.Next[0], &v)
+	case "Ident":
+		return p.parseIdent(bnf.Text, out) ||
+			p.matchDefaultIdent(bnf.Text) ||
+			p.matchDefaultIdentThatEmit(bnf.Text, out)
+	case "Regex":
+		if v := regexp.MustCompile(bnf.Text).FindIndex(p.s); v != nil {
+			m := p.s.Mark()
+			p.s.Advance(v[1])
 			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})
 			return true
 		}
@@ -154,9 +152,9 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 	return false
 }
 
-func (p *Parser) parseIdent(bnf AST, out *[]AST) bool {
+func (p *Parser) parseIdent(ident string, out *[]AST) bool {
 	for _, stmt := range p.bnf.Next {
-		if stmt.Next[0].Text == bnf.Text {
+		if stmt.Next[0].Text == ident {
 			return p.parse(stmt, out)
 		}
 	}
@@ -164,8 +162,8 @@ func (p *Parser) parseIdent(bnf AST, out *[]AST) bool {
 }
 
 // matchDefaultIdent match identifiers that do not emit a token.
-func (p *Parser) matchDefaultIdent(bnf AST) bool {
-	switch bnf.Text {
+func (p *Parser) matchDefaultIdent(ident string) bool {
+	switch ident {
 	case "EOF":
 		return p.s.Empty()
 	case "MORE":
@@ -187,8 +185,8 @@ func (p *Parser) matchDefaultIdent(bnf AST) bool {
 }
 
 // matchDefaultIdentThatEmit match identifiers that emit a token.
-func (p *Parser) matchDefaultIdentThatEmit(bnf AST, out *[]AST) bool {
-	switch bnf.Text {
+func (p *Parser) matchDefaultIdentThatEmit(ident string, out *[]AST) bool {
+	switch ident {
 	case "ANY":
 		if m := p.s.Mark(); p.s.Next() {
 			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})

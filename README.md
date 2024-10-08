@@ -261,7 +261,7 @@ bnf.Print(v)
 
 Any sequence of symbols is considered an And expression.
 For example `a b c` reads as match `a` AND `b` AND `c`.
-All of them needs to succeed for the matching to continue.
+All of them need to succeed for the matching to continue.
 `And` has precedence over [Or](#or).
 
 ```go
@@ -463,14 +463,14 @@ It accepts either a plain string argument `TEXT('example')` or no argument `TEXT
 
 ```go
 INP := `
-    Key1=Val1
+    Key1=Value1
     Key2=
-    Key3=Val3
+    Key3=Value3
 `
 
 BNF := `
     root = SCAN( pair )
-    pair = val '='i ( val | TEXT('Default Val') )
+    pair = val '='i ( val | TEXT('Default Value') )
      val = '\w+'r
 `
 
@@ -482,11 +482,11 @@ bnf.Print(v)
 // Output:
 // [Group]
 //     [Ident] Key1
-//     [Ident] Val1
+//     [Ident] Value1
 //     [Ident] Key2
-//     [Ident] Default Val
+//     [Ident] Default Value
 //     [Ident] Key3
-//     [Ident] Val3
+//     [Ident] Value3
 ```
 
 ### SAVE and LOAD (Backreference)
