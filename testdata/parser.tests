@@ -98,6 +98,21 @@ root = '('i 'a' (',' 'a')* ')'i
 [Then]
 [Group]
 
+
+[Test]
+Test that "And" is reseting the scanner when it fails with JOIN.
+It would output: "[Ident] a,a" if not reseting.
+
+[Give]
+(a,a,)
+
+[When]
+root = JOIN( '('i 'a' (',' 'a')* ')'i )
+
+[Then]
+[Group]
+
+
 [Test]
 Test the * quantifier. It must match zero, one or many.
 
@@ -155,62 +170,6 @@ root = 'One'? 'Two' ' 'i 'One'? 'Two' ' 'i 'One'? 'OneTwo'
 
 
 [Test]
-MATCH must match the tree and return the matched token.
-Notice the difference between 'One'+ with and without MATCH.
-
-[Give]
-OneOne OneOne
-
-[When]
-root = MATCH('One'+) ' 'i 'One'+
-
-[Then]
-[Group]
-    [Ident] OneOne
-    [Ident] One
-    [Ident] One
-
-
-[Test]
-Test MATCH and the ? quantifier.
-
-[Give]
-OneTwo Two OneOneTwo
-
-[When]
-root = MATCH('One'? 'Two' ' 'i 'One'? 'Two' ' 'i 'One'? 'OneTwo')
-
-[Then]
-[Ident] OneTwo Two OneOneTwo
-
-
-[Test]
-Test MATCH and the + quantifier.
-
-[Give]
-OneTwo OneOneTwo Two
-
-[When]
-root = MATCH('One'+ 'Two' ' 'i 'One'+ 'Two' ' 'i ( 'One'+ | 'Two' ))
-
-[Then]
-[Ident] OneTwo OneOneTwo Two
-
-
-[Test]
-Test MATCH and the * quantifier.
-
-[Give]
-OneTwo OneOneTwo Two
-
-[When]
-root = MATCH('One'* 'Two' ' 'i 'One'* 'Two' ' 'i 'One'* 'Two')
-
-[Then]
-[Ident] OneTwo OneOneTwo Two
-
-
-[Test]
 Test NOT.
 
 [Give]
@@ -250,7 +209,7 @@ Test that NOT will match until 'Two', not including it in the result.
 OneOneTwoOne
 
 [When]
-root = MATCH(NOT('Two')+)
+root = JOIN(NOT('Two')+)
 
 [Then]
 [Ident] OneOne
@@ -263,7 +222,7 @@ Test that NOT matches until EOF.
 OneOneTwoOne
 
 [When]
-root = MATCH(NOT('Three')+)
+root = JOIN(NOT('Three')+)
 
 [Then]
 [Ident] OneOneTwoOne
@@ -290,7 +249,7 @@ Hello, {name}! You have {count} messages.
 
 [When]
 root = SCAN(tag)
- tag = MATCH('{' '\w+'r '}')
+ tag = JOIN('{' '\w+'r '}')
 
 [Then]
 [Group]
@@ -434,21 +393,34 @@ pair = val '='i ( val | TEXT('Default Val') )
 
 
 [Test]
-Test JOIN().
-Also show the difference between JOIN and MATCH.
+JOIN must match the tree and return the matched token.
+Notice the difference between 'One'+ with and without MATCH.
 
 [Give]
-"One \"Two\" Three"
-"One \"Two\" Three"
+OneOne OneOne
 
 [When]
-root = MATCH(str) nl JOIN(str)
- str = '"'i ( NOT('"' | '\\') | '\\'i MATCH(any) )* '"'i
+root = JOIN('One'+) ' 'i 'One'+
 
 [Then]
 [Group]
-    [Ident] "One \"Two\" Three"
-    [Ident] One "Two" Three
+    [Ident] OneOne
+    [Ident] One
+    [Ident] One
+
+
+[Test]
+Test JOIN() and Ignore.
+
+[Give]
+"One \"Two\" Three"
+
+[When]
+root = JOIN(str)
+ str = '"'i ( NOT('"' | '\\') | '\\'i ANY )* '"'i
+
+[Then]
+[Ident] One "Two" Three
 
 
 [Test]
@@ -458,7 +430,7 @@ Test SAVE and LOAD (Back Reference).
 <a>hello</a>
 
 [When]
-tag = MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>')
+tag = JOIN('<' SAVE(w) '>') ( '\w+'r | tag )* JOIN('</' LOAD() '>')
   w = '\w+'r
 
 [Then]
@@ -469,13 +441,13 @@ tag = MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>')
 
 
 [Test]
-Test SAVE and LOAD (Back Reference) recursively.
+Test SAVE and LOAD (Back Reference) recursively (subgroup).
 
 [Give]
 <a>hello<b>world</b></a>
 
 [When]
-tag = GROUP( MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>') )
+tag = GROUP( JOIN('<' SAVE(w) '>') ( '\w+'r | tag )* JOIN('</' LOAD() '>') )
   w = '\w+'r
 
 [Then]
@@ -490,21 +462,7 @@ tag = GROUP( MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>') )
 
 
 [Test]
-Test SAVE and LOAD (Back Reference) recursively with MATCH.
-
-[Give]
-<a>hello<b>world</b></a>
-
-[When]
-tag = MATCH( '<' SAVE(w) '>' ( '\w+'r | tag )* '</' LOAD() '>' )
-  w = '\w+'r
-
-[Then]
-[Ident] <a>hello<b>world</b></a>
-
-
-[Test]
-Test SAVE and LOAD (Back Reference) recursively with JOIN.
+Test SAVE and LOAD (Back Reference) recursively with global JOIN.
 
 [Give]
 <a>hello<b>world</b></a>
@@ -515,3 +473,27 @@ tag = JOIN( '<' SAVE(w) '>' ( '\w+'r | tag )* '</' LOAD() '>' )
 
 [Then]
 [Ident] <a>hello<b>world</b></a>
+
+
+[Test]
+Test SCAN() README example.
+
+[Give]
+The standard chunk of Lorem Ipsum used since the 1500s
+is reproduced below for those interested. Sections 1.10.32 and
+1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also
+reproduced in their exact original form, accompanied by English
+versions from the 1914 translation by H. Rackham.
+
+[When]
+root = SCAN(ver | num)
+ num = '\d+'r
+ ver = JOIN(num '.' num '.' num)
+
+[Then]
+[Group]
+    [Ident] 1500
+    [Ident] 1.10.32
+    [Ident] 1.10.33
+    [Ident] 1914
+

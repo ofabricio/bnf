@@ -49,7 +49,7 @@ Homework: try adding support for whitespaces, minus, division and negative numbe
 ## Example 2
 
 Parsing a simple JSON that supports only strings and no whitespaces.
-[Go Playground](https://go.dev/play/p/BBIwl0pENfW)
+[Go Playground](https://go.dev/play/p/ZvifFi7FWfd)
 
 ```go
 import "github.com/ofabricio/bnf"
@@ -63,7 +63,7 @@ func main() {
 	    obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
 	    arr = GROUP( '['i val (','i val)* ']'i ):Array
 	    okv = str ':'i val
-	    str = MATCH( '"' ( NOT('"' | '\\') | '\\' any )* '"' )
+	    str = JOIN( '"' ( NOT('"' | '\\') | '\\' ANY )* '"' )
 	`
 
 	b := bnf.Compile(BNF)
@@ -98,8 +98,7 @@ Homework: try adding support for whitespaces, numbers, booleans and null.
 | `ROOT(a)` | Make the token a root token. Works only in a logical AND operation. |
 | `GROUP(a)` | Group the tokens. |
 | `NOT(a)` | Match any character that is not `a`. |
-| `MATCH(a)` | Match the nodes into one. |
-| `JOIN(a)` | Join the nodes into one. |
+| `JOIN(a)` | Join nodes into one. |
 | `TEXT(a)` | Add a text node in the tree. |
 | `SAVE(a)` | Save a token to be loaded with `LOAD()`. |
 | `LOAD()` | Load a token saved with `SAVE()`. |
@@ -118,6 +117,7 @@ If defined they will be overridden.
 | `nl` | Match a newline character `'\n'ri` |
 | `tb` | Match a tab character `'\t'ri` |
 | `any` | Match any character `'.'ri` |
+| `ANY` | Match any character `'.'r` |
 | `EOF` | Match if the scanner is at the end. |
 | `MORE` | Match if the scanner has more to scan. |
 
@@ -337,32 +337,15 @@ bnf.Print(v)
 //     [Ident] Eight
 ```
 
-### MATCH and JOIN
+### JOIN
 
-Both functions join nodes into one. They emit a node with the matched text.
-
-But `MATCH` ignores many operators, like the [Ignore](#ignore) flag,
-and returns the text from the beginning to the end of the nodes.
-
-`JOIN` on the other hand doesn't ignore any operator, concatenating
-the text of all nodes.
-
-Hence `MATCH` is more efficient than `JOIN`,
-but `JOIN` is useful in other scenarios.
-
-In this example, the first string is returned intact with `MATCH`.
-The second string we ignore both the surrounding quotes and
-the escape character. This is only possible with `JOIN`.
+This function joins nodes into one.
 
 ```go
-INP := `
-    "One \"Two\" Three"
-    "One \"Two\" Three"
-`
+INP := `OneOne OneOne`
 
 BNF := `
-    root = ws* MATCH(str) ws* JOIN(str)
-     str = '"'i ( NOT('"' | '\\') | '\\'i MATCH(any) )* '"'i
+    root = JOIN('One'+) ' 'i 'One'+
 `
 
 b := bnf.Compile(BNF)
@@ -372,11 +355,10 @@ bnf.Print(v)
 
 // Output:
 // [Group]
-//     [Ident] "One \"Two\" Three"
-//     [Ident] One "Two" Three
+//     [Ident] OneOne
+//     [Ident] One
+//     [Ident] One
 ```
-
-Note `MATCH(any)`. It is forcing `any` to emit, because `any` is defined as `'.'ri`.
 
 ### NOT
 
@@ -515,7 +497,7 @@ These functions work together to allow for Backreference.
 INP := `<a>hello<b>world</b></a>`
 
 BNF := `
-    tag = GROUP( MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>') )
+    tag = GROUP( JOIN('<' SAVE(w) '>') ( '\w+'r | tag )* JOIN('</' LOAD() '>') )
       w = '\w+'r
 `
 
@@ -549,7 +531,7 @@ versions from the 1914 translation by H. Rackham.`
 BNF := `
     root = SCAN(ver | num)
      num = '\d+'r
-     ver = MATCH(num '.' num '.' num)
+     ver = JOIN(num '.' num '.' num)
 `
 
 b := bnf.Compile(BNF)

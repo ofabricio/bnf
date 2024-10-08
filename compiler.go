@@ -95,10 +95,6 @@ func (c *Compiler) function(out *AST) bool {
 		*out = AST{Type: "NOT", Next: []AST{*out}}
 		return true
 	}
-	if c.s.Match("MATCH") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
-		*out = AST{Type: "MATCH", Next: []AST{*out}}
-		return true
-	}
 	if c.s.Match("JOIN") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
 		*out = AST{Type: "JOIN", Next: []AST{*out}}
 		return true

@@ -21,7 +21,7 @@ func ExampleCompile() {
 		l = a * b+ ( ( c d ) ? | e )*
 		m = a ROOT(b) c
 		n = GROUP( a b c )
-		o = MATCH( a b c )
+		o = JOIN( a b c )
 		p = 'a'i 'b'r 'c'ri
 	`
 
@@ -141,7 +141,7 @@ func ExampleCompile() {
 	//                 [Ident] c
 	//     [Stmt]
 	//         [Ident] o
-	//         [MATCH]
+	//         [JOIN]
 	//             [And]
 	//                 [Ident] a
 	//                 [Ident] b

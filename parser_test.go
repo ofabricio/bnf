@@ -81,7 +81,7 @@ func Example_json() {
 	    obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
 	    arr = GROUP( '['i val (','i val)* ']'i ):Array
 	    okv = str ':'i val
-	    str = MATCH( '"' ( NOT('"' | '\\') | '\\' any )* '"' )
+	    str = JOIN( '"' ( NOT('"' | '\\') | '\\' ANY )* '"' )
 	`
 
 	b := bnf.Compile(BNF)
@@ -196,7 +196,7 @@ Eight
 
 	BNF := `
 	    root = GROUP(section section section section)+
-	 section = ws tag '\n'ri MATCH( NOT(ws (tag | EOF))+ )
+	 section = ws tag '\n'ri JOIN( NOT(ws (tag | EOF))+ )
 		 tag = '[Test]'i | '[Give]'i | '[When]'i | '[Then]'i
 		  ws = '\s*'ri
 	`
@@ -229,7 +229,7 @@ func TestParser(t *testing.T) {
 
 	BNF := `
 	    root = GROUP(section section section section)+
-	 section = ws tag '\n'ri MATCH(NOT(ws (tag | EOF))+)
+	 section = ws tag '\n'ri JOIN( NOT(ws (tag | EOF))+ )
 		 tag = '[Test]'i | '[Give]'i | '[When]'i | '[Then]'i
 		  ws = '\s*'ri
 	`
