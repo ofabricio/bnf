@@ -49,24 +49,24 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		var v []AST
 		if p.parse(bnf.Next[0], &v) {
 			p.sav = v[0].Text
-			*out = append(*out, v...)
+			p.emit(out, v...)
 			return true
 		}
 	case "LOAD":
 		return p.parse(AST{Type: "Plain", Text: p.sav}, out)
 	case "TEXT":
-		*out = append(*out, AST{Type: "Ident", Text: bnf.Next[0].Text})
+		p.emitIdent(out, bnf.Next[0].Text)
 		return true
 	case "JOIN":
 		var v []AST
 		if p.parse(bnf.Next[0], &v) {
-			*out = append(*out, AST{Type: "Ident", Text: join(v)})
+			p.emitIdent(out, Join(v))
 			return true
 		}
 	case "MATCH":
 		var v []AST
 		if m := p.s.Mark(); p.parse(bnf.Next[0], &v) {
-			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})
+			p.emitIdent(out, p.s.Text(m))
 			return true
 		}
 	case "GROUP":
@@ -76,7 +76,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 				return false
 			}
 		}
-		*out = append(*out, AST{Type: "Group", Next: v})
+		p.emit(out, AST{Type: "Group", Next: v})
 		return true
 	case "And":
 		m := p.s.Mark()
@@ -92,16 +92,16 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 			}
 		}
 		if len(r) > 0 {
-			*out = append(*out, AST{Type: r[0].Type, Text: r[0].Text, Next: v})
-		} else {
-			*out = append(*out, v...)
+			r[0].Next = v
+			v = r[:1]
 		}
+		p.emit(out, v...)
 		return true
 	case "Or":
 		for _, n := range bnf.Next {
 			var v []AST
 			if p.parse(n, &v) {
-				*out = append(*out, v...)
+				p.emit(out, v...)
 				return true
 			}
 		}
@@ -123,7 +123,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		var v []AST
 		if p.parse(bnf.Next[0], &v) {
 			v[0].Type = bnf.Text
-			*out = append(*out, v[0])
+			p.emit(out, v[0])
 			return true
 		}
 	case "NOT":
@@ -132,7 +132,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 			p.s.Move(m)
 			return false
 		} else if p.s.Next() {
-			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})
+			p.emitIdent(out, p.s.Text(m))
 			return true
 		}
 	case "Ignore":
@@ -146,12 +146,12 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		if v := regexp.MustCompile(bnf.Text).FindIndex(p.s); v != nil {
 			m := p.s.Mark()
 			p.s.Advance(v[1])
-			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})
+			p.emitIdent(out, p.s.Text(m))
 			return true
 		}
 	case "Plain":
 		if m := p.s.Mark(); p.s.Match(bnf.Text) {
-			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})
+			p.emitIdent(out, p.s.Text(m))
 			return true
 		}
 	}
@@ -165,6 +165,14 @@ func (p *Parser) parseIdent(ident string, out *[]AST) bool {
 		}
 	}
 	return false
+}
+
+func (p *Parser) emitIdent(out *[]AST, text string) {
+	*out = append(*out, AST{Type: "Ident", Text: text})
+}
+
+func (p *Parser) emit(out *[]AST, n ...AST) {
+	*out = append(*out, n...)
 }
 
 // matchDefaultIdent match identifiers that do not emit a token.
@@ -195,7 +203,7 @@ func (p *Parser) matchDefaultIdentThatEmit(ident string, out *[]AST) bool {
 	switch ident {
 	case "ANY":
 		if m := p.s.Mark(); p.s.Next() {
-			*out = append(*out, AST{Type: "Ident", Text: p.s.Text(m)})
+			p.emitIdent(out, p.s.Text(m))
 			return true
 		}
 	}
@@ -223,10 +231,10 @@ func flatten(tree AST, depth int) []AST {
 	return f
 }
 
-func join(tree []AST) string {
+func Join(tree []AST) string {
 	var out string
 	for _, n := range tree {
-		out += n.Text + join(n.Next)
+		out += n.Text + Join(n.Next)
 	}
 	return out
 }
