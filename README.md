@@ -49,7 +49,7 @@ Homework: try adding support for whitespaces, minus, division and negative numbe
 ## Example 2
 
 Parsing a simple JSON that supports only strings and no whitespaces.
-[Go Playground](https://go.dev/play/p/ZvifFi7FWfd)
+[Go Playground](https://go.dev/play/p/YsB6p1zMl46)
 
 ```go
 import "github.com/ofabricio/bnf"
