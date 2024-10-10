@@ -83,41 +83,42 @@ func (c *Compiler) factor(out *AST) bool {
 }
 
 func (c *Compiler) function(out *AST) bool {
-	if c.s.Match("ROOT") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
-		*out = AST{Type: "ROOT", Next: []AST{*out}}
+	var arg AST
+	if c.s.Match("ROOT") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
+		*out = AST{Type: "ROOT", Next: []AST{arg}}
 		return true
 	}
-	if c.s.Match("GROUP") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
-		*out = AST{Type: "GROUP", Next: []AST{*out}}
+	if c.s.Match("GROUP") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
+		*out = AST{Type: "GROUP", Next: []AST{arg}}
 		return true
 	}
-	if c.s.Match("NOT") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
-		*out = AST{Type: "NOT", Next: []AST{*out}}
+	if c.s.Match("NOT") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
+		*out = AST{Type: "NOT", Next: []AST{arg}}
 		return true
 	}
-	if c.s.Match("JOIN") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
-		*out = AST{Type: "JOIN", Next: []AST{*out}}
+	if c.s.Match("JOIN") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
+		*out = AST{Type: "JOIN", Next: []AST{arg}}
 		return true
 	}
-	if c.s.Match("MATCH") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
-		*out = AST{Type: "MATCH", Next: []AST{*out}}
+	if c.s.Match("MATCH") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
+		*out = AST{Type: "MATCH", Next: []AST{arg}}
 		return true
 	}
-	if c.s.Match("TEXT") && c.s.MatchChar("(") && (c.expr(out) || true) && c.s.MatchChar(")") {
-		*out = AST{Type: "TEXT", Next: []AST{*out}}
+	if c.s.Match("TEXT") && c.s.MatchChar("(") && (c.expr(&arg) || true) && c.s.MatchChar(")") {
+		*out = AST{Type: "TEXT", Next: []AST{arg}}
 		return true
 	}
-	if c.s.Match("SAVE") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
-		*out = AST{Type: "SAVE", Next: []AST{*out}}
+	if c.s.Match("SAVE") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
+		*out = AST{Type: "SAVE", Next: []AST{arg}}
 		return true
 	}
 	if c.s.Match("LOAD") && c.s.MatchChar("(") && c.s.MatchChar(")") {
 		*out = AST{Type: "LOAD"}
 		return true
 	}
-	if c.s.Match("SCAN") && c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") {
+	if c.s.Match("SCAN") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
 		n := AST{Type: "Ident", Text: "any"}
-		o := AST{Type: "Or", Next: []AST{*out, n}}
+		o := AST{Type: "Or", Next: []AST{arg, n}}
 		q := AST{Type: "*", Next: []AST{o}}
 		*out = q
 		return true

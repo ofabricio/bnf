@@ -393,6 +393,23 @@ pair = val '='i ( val | TEXT('Default Value') )
 
 
 [Test]
+Test TEXT() argument cleanup.
+If the argument are not being cleaned the last Ident would be "a" too.
+
+[Give]
+a
+
+[When]
+root = TEXT() 'a' TEXT()
+
+[Then]
+[Group]
+    [Ident]
+    [Ident] a
+    [Ident]
+
+
+[Test]
 JOIN must match the tree and return the matched token.
 Notice the difference between 'One'+ with and without MATCH.
 
