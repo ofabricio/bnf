@@ -117,10 +117,7 @@ func (c *Compiler) function(out *AST) bool {
 		return true
 	}
 	if c.s.Match("SCAN") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
-		n := AST{Type: "Ident", Text: "ANY"}
-		o := AST{Type: "Or", Next: []AST{arg, n}}
-		q := AST{Type: "*", Next: []AST{o}}
-		*out = q
+		*out = AST{Type: "SCAN", Next: []AST{arg}}
 		return true
 	}
 	return false

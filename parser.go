@@ -43,6 +43,11 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		v := p.parse(bnf.Next[1], out)
 		p.sav = s
 		return v
+	case "SCAN":
+		for p.parse(bnf.Next[0], out) || p.s.Next() {
+			// SCAN = ( arg | ANY )*
+		}
+		return true
 	case "ROOT":
 		return p.parse(bnf.Next[0], out)
 	case "SAVE":
