@@ -19,12 +19,12 @@ func Parse(bnf AST, src string) AST {
 }
 
 func NewParser(bnf AST, src string) *Parser {
-	return &Parser{s: scan.Bytes(src), bnf: bnf}
+	return &Parser{cur: scan.Bytes(src), bnf: bnf}
 }
 
 type Parser struct {
-	s   scan.Bytes
-	bnf AST // Root BNF.
+	cur scan.Bytes
+	bnf AST
 	sav string
 }
 
@@ -44,7 +44,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		p.sav = s
 		return v
 	case "SCAN":
-		for p.parse(bnf.Next[0], out) || p.s.Next() {
+		for p.parse(bnf.Next[0], out) || p.cur.Next() {
 			// SCAN = ( arg | ANY )*
 		}
 		return true
@@ -70,8 +70,8 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		}
 	case "MATCH":
 		var v []AST
-		if m := p.s.Mark(); p.parse(bnf.Next[0], &v) {
-			p.emitIdent(out, p.s.Text(m))
+		if m := p.cur.Mark(); p.parse(bnf.Next[0], &v) {
+			p.emitIdent(out, p.cur.Text(m))
 			return true
 		}
 	case "GROUP":
@@ -84,7 +84,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		p.emit(out, AST{Type: "Group", Next: v})
 		return true
 	case "And":
-		m := p.s.Mark()
+		m := p.cur.Mark()
 		var v, r []AST
 		for _, n := range bnf.Next {
 			vr := &v
@@ -92,7 +92,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 				vr = &r
 			}
 			if !p.parse(n, vr) {
-				p.s.Move(m)
+				p.cur.Move(m)
 				return false
 			}
 		}
@@ -133,11 +133,11 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		}
 	case "NOT":
 		var v []AST
-		if m := p.s.Mark(); p.parse(bnf.Next[0], &v) {
-			p.s.Move(m)
+		if m := p.cur.Mark(); p.parse(bnf.Next[0], &v) {
+			p.cur.Move(m)
 			return false
-		} else if p.s.Next() {
-			p.emitIdent(out, p.s.Text(m))
+		} else if p.cur.Next() {
+			p.emitIdent(out, p.cur.Text(m))
 			return true
 		}
 	case "Ignore":
@@ -148,15 +148,15 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 			p.matchDefaultIdent(bnf.Text) ||
 			p.matchDefaultIdentThatEmit(bnf.Text, out)
 	case "Regex":
-		if v := regexp.MustCompile(bnf.Text).FindIndex(p.s); v != nil {
-			m := p.s.Mark()
-			p.s.Advance(v[1])
-			p.emitIdent(out, p.s.Text(m))
+		if v := regexp.MustCompile(bnf.Text).FindIndex(p.cur); v != nil {
+			m := p.cur.Mark()
+			p.cur.Advance(v[1])
+			p.emitIdent(out, p.cur.Text(m))
 			return true
 		}
 	case "Plain":
-		if m := p.s.Mark(); p.s.Match(bnf.Text) {
-			p.emitIdent(out, p.s.Text(m))
+		if m := p.cur.Mark(); p.cur.Match(bnf.Text) {
+			p.emitIdent(out, p.cur.Text(m))
 			return true
 		}
 	}
@@ -184,21 +184,21 @@ func (p *Parser) emit(out *[]AST, n ...AST) {
 func (p *Parser) matchDefaultIdent(ident string) bool {
 	switch ident {
 	case "EOF":
-		return p.s.Empty()
+		return p.cur.Empty()
 	case "MORE":
-		return p.s.More()
+		return p.cur.More()
 	case "ANY":
-		return p.s.Next()
+		return p.cur.Next()
 	case "WS":
-		return p.s.MatchFunc(unicode.IsSpace) // ' \t\r\n'
+		return p.cur.MatchFunc(unicode.IsSpace) // ' \t\r\n'
 	case "NL":
-		return p.s.MatchChar("\n")
+		return p.cur.MatchChar("\n")
 	case "SP":
-		return p.s.MatchChar(" ")
+		return p.cur.MatchChar(" ")
 	case "ST":
-		return p.s.MatchChar(" \t")
+		return p.cur.MatchChar(" \t")
 	case "TB":
-		return p.s.MatchChar("\t")
+		return p.cur.MatchChar("\t")
 	}
 	return false
 }
@@ -207,8 +207,8 @@ func (p *Parser) matchDefaultIdent(ident string) bool {
 func (p *Parser) matchDefaultIdentThatEmit(ident string, out *[]AST) bool {
 	switch ident {
 	case "any":
-		if m := p.s.Mark(); p.s.Next() {
-			p.emitIdent(out, p.s.Text(m))
+		if m := p.cur.Mark(); p.cur.Next() {
+			p.emitIdent(out, p.cur.Text(m))
 			return true
 		}
 	}
