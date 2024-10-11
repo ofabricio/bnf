@@ -8,6 +8,12 @@ Parse text using a [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form)
 
 This is still in a very early, unusable state.
 
+## Install
+
+```
+go get github.com/ofabricio/bnf
+```
+
 ## Example 1
 
 Parsing a simple expression. [Go Playground](https://go.dev/play/p/HFlZ7h_OlGl)
@@ -87,12 +93,6 @@ func main() {
 ```
 
 Homework: try adding support for whitespaces, numbers, booleans and null.
-
-# Install
-
-```
-go get github.com/ofabricio/bnf
-```
 
 # Quick Reference
 
