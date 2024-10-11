@@ -618,3 +618,32 @@ root = (num '+' num) sp MATCH(num '+' num) sp MATCH(num ROOT('+') num) sp MATCH(
     [Ident] 2+2
     [Ident] 3+3
     [Ident] 4+4
+
+
+[Test]
+Test CSV parsing.
+
+[Give]
+a;b;c
+d;e;f
+g;;i
+
+[When]
+csv = GROUP(GROUP( MORE row )+)
+row = cel ( ';'i cel )* ( nl | EOF )
+cel = MATCH(NOT( ';' | nl | EOF )+) | TEXT()
+
+[Then]
+[Group]
+    [Group]
+        [Ident] a
+        [Ident] b
+        [Ident] c
+    [Group]
+        [Ident] d
+        [Ident] e
+        [Ident] f
+    [Group]
+        [Ident] g
+        [Ident]
+        [Ident] i
