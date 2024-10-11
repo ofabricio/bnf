@@ -647,3 +647,29 @@ cel = MATCH(NOT( ';' | nl | EOF )+) | TEXT()
         [Ident] g
         [Ident]
         [Ident] i
+
+
+[Test]
+Test multiline statements.
+
+[Give]
+abcde
+
+[When]
+root = 'x'
+     | 'x'
+     | 'a' next
+
+next = 'x'
+     | 'x'
+     | 'b' 'c'
+       'd'
+       'e'
+
+[Then]
+[Group]
+    [Ident] a
+    [Ident] b
+    [Ident] c
+    [Ident] d
+    [Ident] e

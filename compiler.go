@@ -35,7 +35,7 @@ func (c *Compiler) stmts(out *[]AST) bool {
 
 func (c *Compiler) stmt(out *AST) bool {
 	var i AST
-	if c.s.Spaces(); c.ident(&i) && c.ost() && c.s.MatchChar("=") && c.expr(out) {
+	if c.ws(); c.ident(&i) && c.stmtMarker() && c.expr(out) {
 		*out = AST{Type: "Stmt", Next: []AST{i, *out}}
 		return true
 	}
@@ -74,7 +74,7 @@ func (c *Compiler) term(out *AST) bool {
 }
 
 func (c *Compiler) factor(out *AST) bool {
-	c.st()
+	c.ws()
 	return (c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") ||
 		c.function(out) ||
 		c.value(out)) &&
@@ -127,7 +127,7 @@ func (c *Compiler) function(out *AST) bool {
 }
 
 func (c *Compiler) quantifier(out *AST) bool {
-	c.st()
+	c.ws()
 	if m := c.s.Mark(); c.s.MatchChar("*+?") {
 		*out = AST{Type: c.s.Text(m), Next: []AST{*out}}
 		return true
@@ -148,7 +148,14 @@ func (c *Compiler) typ(out *AST) bool {
 }
 
 func (c *Compiler) value(out *AST) bool {
-	return c.ident(out) || c.text(out)
+	if m := c.s.Mark(); c.ident(out) {
+		if c.stmtMarker() {
+			c.s.Move(m)
+			return false
+		}
+		return true
+	}
+	return c.text(out)
 }
 
 func (c *Compiler) ident(out *AST) bool {
@@ -205,14 +212,12 @@ func (c *Compiler) matchRegex(re *regexp.Regexp) bool {
 	return false
 }
 
-// Optional Space or Tab.
-func (c *Compiler) ost() bool {
-	return c.st() || true
+func (c *Compiler) stmtMarker() bool {
+	return c.ws() && c.s.MatchChar("=")
 }
 
-// Space or Tab.
-func (c *Compiler) st() bool {
-	return c.s.WhileChar(" \t")
+func (c *Compiler) ws() bool {
+	return c.s.WhileChar(" \t\n\r") || true
 }
 
 var reText = regexp.MustCompile(`^'([^'\\]|\\.)*'`)
