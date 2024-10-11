@@ -182,17 +182,17 @@ func (p *Parser) matchDefaultIdent(ident string) bool {
 		return p.s.Empty()
 	case "MORE":
 		return p.s.More()
-	case "any":
+	case "ANY":
 		return p.s.Next()
-	case "ws":
+	case "WS":
 		return p.s.MatchFunc(unicode.IsSpace) // ' \t\r\n'
-	case "nl":
+	case "NL":
 		return p.s.MatchChar("\n")
-	case "sp":
+	case "SP":
 		return p.s.MatchChar(" ")
-	case "st":
+	case "ST":
 		return p.s.MatchChar(" \t")
-	case "tb":
+	case "TB":
 		return p.s.MatchChar("\t")
 	}
 	return false
@@ -201,7 +201,7 @@ func (p *Parser) matchDefaultIdent(ident string) bool {
 // matchDefaultIdentThatEmit match identifiers that emit a token.
 func (p *Parser) matchDefaultIdentThatEmit(ident string, out *[]AST) bool {
 	switch ident {
-	case "ANY":
+	case "any":
 		if m := p.s.Mark(); p.s.Next() {
 			p.emitIdent(out, p.s.Text(m))
 			return true

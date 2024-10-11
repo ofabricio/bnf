@@ -55,7 +55,7 @@ Homework: try adding support for whitespaces, minus, division and negative numbe
 ## Example 2
 
 Parsing a simple JSON that supports only strings and no whitespaces.
-[Go Playground](https://go.dev/play/p/YsB6p1zMl46)
+[Go Playground](https://go.dev/play/p/BBIwl0pENfW)
 
 ```go
 import "github.com/ofabricio/bnf"
@@ -69,7 +69,7 @@ func main() {
 	    obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
 	    arr = GROUP( '['i val (','i val)* ']'i ):Array
 	    okv = str ':'i val
-	    str = MATCH( '"' ( NOT('"' | '\\') | '\\' ANY )* '"' )
+	    str = MATCH( '"' ( NOT('"' | '\\') | '\\' any )* '"' )
 	`
 
 	b := bnf.Compile(BNF)
@@ -118,13 +118,13 @@ If defined they will be overridden.
 
 | Identifier | Description |
 | --- | --- |
-| `ws` | Match a whitespace character `'\s'ri` |
-| `sp` | Match a space character `' 'i` |
-| `st` | Match a space or tab character `'[ \t]'ri` |
-| `nl` | Match a newline character `'\n'ri` |
-| `tb` | Match a tab character `'\t'ri` |
-| `any` | Match any character `'.'ri` |
-| `ANY` | Match any character `'.'r` |
+| `WS` | Match a whitespace character `'\s'ri` |
+| `SP` | Match a space character `' 'i` |
+| `ST` | Match a space or tab character `'[ \t]'ri` |
+| `NL` | Match a newline character `'\n'ri` |
+| `TB` | Match a tab character `'\t'ri` |
+| `ANY` | Match any character `'.'ri` |
+| `any` | Match any character `'.'r` |
 | `EOF` | Match if the scanner is at the end. |
 | `MORE` | Match if the scanner has more to scan. |
 
@@ -363,7 +363,7 @@ In the example below, note:
 INP := `1+1 2+2 3+3 4+4`
 
 BNF := `
-    root = (num '+' num) sp JOIN(num '+' num) sp JOIN(num ROOT('+') num) sp JOIN(num '+'i num)
+    root = (num '+' num) SP JOIN(num '+' num) SP JOIN(num ROOT('+') num) SP JOIN(num '+'i num)
      num = '\d+'r
 `
 
@@ -403,7 +403,7 @@ In the example below, note:
 INP := `1+1 2+2 3+3 4+4`
 
 BNF := `
- root = (num '+' num) sp MATCH(num '+' num) sp MATCH(num ROOT('+') num) sp MATCH(num '+'i num)
+ root = (num '+' num) SP MATCH(num '+' num) SP MATCH(num ROOT('+') num) SP MATCH(num '+'i num)
   num = '\d+'r
 `
 

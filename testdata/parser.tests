@@ -11,7 +11,7 @@ Test '...' string.
 '\'one\'two\'three\''
 
 [When]
-root = '\\' sp '\\\\'r (nl str)*
+root = '\\' SP '\\\\'r (NL str)*
  str = '\'([^\'\\\\]|\\\\.)*\''r
 
 [Then]
@@ -434,7 +434,7 @@ Test JOIN() and Ignore.
 
 [When]
 root = JOIN(str)
- str = '"'i ( NOT('"' | '\\') | '\\'i ANY )* '"'i
+ str = '"'i ( NOT('"' | '\\') | '\\'i any )* '"'i
 
 [Then]
 [Ident] One "Two" Three
@@ -564,7 +564,7 @@ val = obj | arr | str
 obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
 arr = GROUP( '['i val (','i val)* ']'i ):Array
 okv = str ':'i val
-str = MATCH( '"' ( NOT('"' | '\\') | '\\' ANY )* '"' )
+str = MATCH( '"' ( NOT('"' | '\\') | '\\' any )* '"' )
 
 [Then]
 [Object]
@@ -587,7 +587,7 @@ Test JOIN Example.
 1+1 2+2 3+3 4+4
 
 [When]
-root = (num '+' num) sp JOIN(num '+' num) sp JOIN(num ROOT('+') num) sp JOIN(num '+'i num)
+root = (num '+' num) SP JOIN(num '+' num) SP JOIN(num ROOT('+') num) SP JOIN(num '+'i num)
  num = '\d+'r
 
 [Then]
@@ -607,7 +607,7 @@ Test MATCH Example.
 1+1 2+2 3+3 4+4
 
 [When]
-root = (num '+' num) sp MATCH(num '+' num) sp MATCH(num ROOT('+') num) sp MATCH(num '+'i num)
+root = (num '+' num) SP MATCH(num '+' num) SP MATCH(num ROOT('+') num) SP MATCH(num '+'i num)
  num = '\d+'r
 
 [Then]
@@ -630,8 +630,8 @@ g;;i
 
 [When]
 csv = GROUP(GROUP( MORE row )+)
-row = cel ( ';'i cel )* ( nl | EOF )
-cel = MATCH(NOT( ';' | nl | EOF )+) | TEXT()
+row = cel ( ';'i cel )* ( NL | EOF )
+cel = MATCH(NOT( ';' | NL | EOF )+) | TEXT()
 
 [Then]
 [Group]
