@@ -187,6 +187,9 @@ func (p *Parser) matchDefaultIdent(ident string) bool {
 		return p.cur.Empty()
 	case "MORE":
 		return p.cur.More()
+	case "SKIPLINE":
+		p.cur.UntilChar("\n")
+		return p.cur.MatchChar("\n") || p.cur.Empty()
 	case "ANY":
 		return p.cur.Next()
 	case "WS":

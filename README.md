@@ -127,6 +127,7 @@ If defined they will be overridden.
 | `any` | Match any character `'.'r` |
 | `EOF` | Match if the scanner is at the end. |
 | `MORE` | Match if the scanner has more to scan. |
+| `SKIPLINE` | Skip a line. |
 
 # Introduction
 

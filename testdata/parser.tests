@@ -673,3 +673,24 @@ next = 'x'
     [Ident] c
     [Ident] d
     [Ident] e
+
+
+[Test]
+Test SKIPLINE.
+
+[Give]
+Line1 Line1
+Line2 Line2
+Line3 Line3
+
+
+[When]
+bnf = 'Line1' SKIPLINE
+      'Line2' SKIPLINE
+      SKIPLINE
+      EOF
+
+[Then]
+[Group]
+    [Ident] Line1
+    [Ident] Line2
