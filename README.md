@@ -562,7 +562,7 @@ In this example we guarantee that the closing tags have the same name of the ope
 INP := `<a>hello<b>world</b></a>`
 
 BNF := `
-    tag = GROUP( MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>') )
+    tag = GROUP( MATCH('<' SAVE(w) '>') ( w | tag )* MATCH('</' LOAD() '>') )
       w = '\w+'r
 `
 

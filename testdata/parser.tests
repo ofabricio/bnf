@@ -447,7 +447,7 @@ Test SAVE and LOAD (Back Reference).
 <a>hello</a>
 
 [When]
-tag = MATCH('<' SAVE(w) '>') ( '\w+'r | tag )* MATCH('</' LOAD() '>')
+tag = MATCH('<' SAVE(w) '>') ( w | tag )* MATCH('</' LOAD() '>')
   w = '\w+'r
 
 [Then]
