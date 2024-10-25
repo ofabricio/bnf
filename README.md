@@ -55,7 +55,7 @@ Homework: try adding support for whitespaces, minus, division and negative numbe
 ## Example 2
 
 Parsing a simple JSON that supports only strings and no whitespaces.
-[Go Playground](https://go.dev/play/p/BBIwl0pENfW)
+[Go Playground](https://go.dev/play/p/HAr1ULSu8q3)
 
 ```go
 import "github.com/ofabricio/bnf"
@@ -69,7 +69,7 @@ func main() {
 	    obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
 	    arr = GROUP( '['i val (','i val)* ']'i ):Array
 	    okv = str ':'i val
-	    str = MATCH( '"' ( NOT('"' | '\\') | '\\' any )* '"' )
+	    str = MATCH( '"' ( ANYNOT('"' | '\\') | '\\' any )* '"' )
 	`
 
 	b := bnf.Compile(BNF)
@@ -103,7 +103,7 @@ Homework: try adding support for whitespaces, numbers, booleans and null.
 | `'...'i` | Ignore the token (do not emit it). |
 | `ROOT(a)` | Make the token a root token. Works only in a logical AND operation. |
 | `GROUP(a)` | Group the tokens. |
-| `NOT(a)` | Match any character that is not `a`. |
+| `ANYNOT(a)` | Match any character that is not `a`. |
 | `JOIN(a)` | Join nodes into one. |
 | `MATCH(a)` | Match nodes into one. |
 | `TEXT(a)` | Add a text node in the tree. |
@@ -423,7 +423,7 @@ bnf.Print(v)
 //     [Ident] 4+4
 ```
 
-### NOT
+### ANYNOT
 
 This function matches any character that is not the argument.
 
@@ -431,7 +431,7 @@ This function matches any character that is not the argument.
 INP := `A`
 
 BNF := `
-    root = NOT('B')
+    root = ANYNOT('B')
 `
 
 b := bnf.Compile(BNF)

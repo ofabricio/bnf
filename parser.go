@@ -131,7 +131,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 			p.emit(out, v[0])
 			return true
 		}
-	case "NOT":
+	case "ANYNOT":
 		var v []AST
 		if m := p.cur.Mark(); p.parse(bnf.Next[0], &v) {
 			p.cur.Move(m)

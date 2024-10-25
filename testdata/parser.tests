@@ -170,13 +170,13 @@ root = 'One'? 'Two' ' 'i 'One'? 'Two' ' 'i 'One'? 'OneTwo'
 
 
 [Test]
-Test NOT.
+Test ANYNOT.
 
 [Give]
 abc
 
 [When]
-root = NOT('b') NOT('a') NOT('c')?
+root = ANYNOT('b') ANYNOT('a') ANYNOT('c')?
 
 [Then]
 [Group]
@@ -185,13 +185,13 @@ root = NOT('b') NOT('a') NOT('c')?
 
 
 [Test]
-Test NOT and + quantifier.
+Test ANYNOT and + quantifier.
 
 [Give]
 "Two"
 
 [When]
-root = '"' NOT('"')+ '"'
+root = '"' ANYNOT('"')+ '"'
 
 [Then]
 [Group]
@@ -203,39 +203,39 @@ root = '"' NOT('"')+ '"'
 
 
 [Test]
-Test that NOT will match until 'Two', not including it in the result.
+Test that ANYNOT will match until 'Two', not including it in the result.
 
 [Give]
 OneOneTwoOne
 
 [When]
-root = MATCH(NOT('Two')+)
+root = MATCH(ANYNOT('Two')+)
 
 [Then]
 [Ident] OneOne
 
 
 [Test]
-Test that NOT matches until EOF.
+Test that ANYNOT matches until EOF.
 
 [Give]
 OneOneTwoOne
 
 [When]
-root = MATCH(NOT('Three')+)
+root = MATCH(ANYNOT('Three')+)
 
 [Then]
 [Ident] OneOneTwoOne
 
 
 [Test]
-Test that NOT returns false if it doesn't advance.
+Test that ANYNOT returns false if it doesn't advance.
 
 [Give]
 OneTwo
 
 [When]
-root = NOT('One')
+root = ANYNOT('One')
 
 [Then]
 [Group]
@@ -434,7 +434,7 @@ Test JOIN() and Ignore.
 
 [When]
 root = JOIN(str)
- str = '"'i ( NOT('"' | '\\') | '\\'i any )* '"'i
+ str = '"'i ( ANYNOT('"' | '\\') | '\\'i any )* '"'i
 
 [Then]
 [Ident] One "Two" Three
@@ -564,7 +564,7 @@ val = obj | arr | str
 obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
 arr = GROUP( '['i val (','i val)* ']'i ):Array
 okv = str ':'i val
-str = MATCH( '"' ( NOT('"' | '\\') | '\\' any )* '"' )
+str = MATCH( '"' ( ANYNOT('"' | '\\') | '\\' any )* '"' )
 
 [Then]
 [Object]
@@ -631,7 +631,7 @@ g;;i
 [When]
 csv = GROUP(GROUP( MORE row )+)
 row = cel ( ';'i cel )* ( NL | EOF )
-cel = MATCH(NOT( ';' | NL | EOF )+) | TEXT()
+cel = MATCH(ANYNOT( ';' | NL | EOF )+) | TEXT()
 
 [Then]
 [Group]

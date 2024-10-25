@@ -92,8 +92,8 @@ func (c *Compiler) function(out *AST) bool {
 		*out = AST{Type: "GROUP", Next: []AST{arg}}
 		return true
 	}
-	if c.s.Match("NOT") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
-		*out = AST{Type: "NOT", Next: []AST{arg}}
+	if c.s.Match("ANYNOT") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
+		*out = AST{Type: "ANYNOT", Next: []AST{arg}}
 		return true
 	}
 	if c.s.Match("JOIN") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
