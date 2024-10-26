@@ -8,14 +8,7 @@ import (
 )
 
 func Parse(bnf AST, src string) AST {
-	var out []AST
-	if !NewParser(bnf, src).Parse(&out) {
-		return AST{Type: "Group", Next: nil}
-	}
-	if len(out) == 1 {
-		return out[0]
-	}
-	return AST{Type: "Group", Next: out}
+	return NewParser(bnf, src).Parse()
 }
 
 func NewParser(bnf AST, src string) *Parser {
@@ -29,8 +22,15 @@ type Parser struct {
 	sav string
 }
 
-func (p *Parser) Parse(out *[]AST) bool {
-	return p.parse(p.bnf, out)
+func (p *Parser) Parse() AST {
+	var v []AST
+	if !p.parse(p.bnf, &v) {
+		return AST{Type: "Error", Pos: p.pos()}
+	}
+	if len(v) == 1 {
+		return v[0]
+	}
+	return AST{Type: "Group", Next: v}
 }
 
 func (p *Parser) parse(bnf AST, out *[]AST) bool {

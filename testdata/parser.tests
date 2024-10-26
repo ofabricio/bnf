@@ -36,7 +36,7 @@ a
 v = ''*
 
 [Then]
-[Group]
+[Error]
 
 
 [Test]
@@ -96,7 +96,7 @@ It would output: "[Ident] a [Ident] , [Ident] a" if not reseting.
 root = '('i 'a' (',' 'a')* ')'i
 
 [Then]
-[Group]
+[Error]
 
 
 [Test]
@@ -110,7 +110,7 @@ It would output: "[Ident] a,a" if not reseting.
 root = JOIN( '('i 'a' (',' 'a')* ')'i )
 
 [Then]
-[Group]
+[Error]
 
 
 [Test]
@@ -238,7 +238,7 @@ OneTwo
 root = ANYNOT('One')
 
 [Then]
-[Group]
+[Error]
 
 
 [Test]
@@ -340,7 +340,7 @@ a
 root = 'a' MORE
 
 [Then]
-[Group]
+[Error]
 
 
 [Test]

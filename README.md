@@ -176,6 +176,7 @@ Noteworthy points:
   Only by using functions we can get a real tree out of it; they are described in the next section.
 - The parser starts from upper left (`expr = num ...`) and goes rightward.
 - Every terminal symbol emits a token (a node in the tree).
+- When the parsing fails, a node of type `Error` is returned; it has the position where the parser failed.
 - There can be recursive calls, when a statement calls itself (see [Example 1](#example-1)).
 
 This is the struct returned by the `bnf.Parse(b, src)` function:
