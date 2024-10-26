@@ -182,15 +182,12 @@ This is the struct returned by the `bnf.Parse(b, src)` function:
 
 ```go
 type AST struct {
-    Type string
-    Text string
-    Next []AST
+    Type string // The type to identify a group of nodes.
+    Text string // The token.
+    Pos  int    // Position of the token.
+    Next []AST  // Children nodes.
 }
 ```
-
-`Type` is the node type, that can be used to identify a group of nodes.
-`Text` is the token emited for a type.
-`Next` has the children nodes.
 
 We can then parse that resulting tree to create something nicer, like a programming language;
 or we can simply use it to collect data from text like a (maybe more readable) regular expression.

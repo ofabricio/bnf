@@ -9,6 +9,27 @@ import (
 	"github.com/ofabricio/bnf"
 )
 
+func Example_pos() {
+
+	INP := `One Two Three`
+
+	BNF := `
+	    root = 'One' WS 'Two' WS 'Three'
+	`
+
+	b := bnf.Compile(BNF)
+	v := bnf.Parse(b, INP)
+
+	for _, v := range v.Next {
+		fmt.Println(v.Text, v.Pos)
+	}
+
+	// Output:
+	// One 0
+	// Two 4
+	// Three 8
+}
+
 func ExampleFlatten() {
 
 	INP := `abcd`

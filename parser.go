@@ -19,10 +19,11 @@ func Parse(bnf AST, src string) AST {
 }
 
 func NewParser(bnf AST, src string) *Parser {
-	return &Parser{cur: scan.Bytes(src), bnf: bnf}
+	return &Parser{src: src, cur: scan.Bytes(src), bnf: bnf}
 }
 
 type Parser struct {
+	src string
 	cur scan.Bytes
 	bnf AST
 	sav string
@@ -173,7 +174,7 @@ func (p *Parser) parseIdent(ident string, out *[]AST) bool {
 }
 
 func (p *Parser) emitIdent(out *[]AST, text string) {
-	*out = append(*out, AST{Type: "Ident", Text: text})
+	*out = append(*out, AST{Type: "Ident", Text: text, Pos: p.pos() - len(text)})
 }
 
 func (p *Parser) emit(out *[]AST, n ...AST) {
@@ -216,6 +217,10 @@ func (p *Parser) matchDefaultIdentThatEmit(ident string, out *[]AST) bool {
 		}
 	}
 	return false
+}
+
+func (p *Parser) pos() int {
+	return len(p.src) - len(p.cur)
 }
 
 // Flatten returns a flat list of nodes. The

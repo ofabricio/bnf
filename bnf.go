@@ -3,6 +3,7 @@ package bnf
 type AST struct {
 	Type string
 	Text string
+	Pos  int
 	Next []AST
 }
 
