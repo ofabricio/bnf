@@ -127,11 +127,12 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		return c > 0
 	case "Type":
 		var v []AST
-		if p.parse(bnf.Next[0], &v) {
+		ok := p.parse(bnf.Next[0], &v)
+		if ok && len(v) > 0 {
 			v[0].Type = bnf.Text
 			p.emit(out, v[0])
-			return true
 		}
+		return ok
 	case "ANYNOT":
 		var v []AST
 		if m := p.cur.Mark(); p.parse(bnf.Next[0], &v) {

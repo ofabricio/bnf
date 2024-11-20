@@ -694,3 +694,16 @@ bnf = 'Line1' SKIPLINE
 [Group]
     [Ident] Line1
     [Ident] Line2
+
+
+[Test]
+Test that TYPE() does not panic with "index out of range [0] with length 0".
+
+[Give]
+b
+
+[When]
+bnf = ('a'?):val
+
+[Then]
+[Group]
