@@ -707,3 +707,40 @@ bnf = ('a'?):val
 
 [Then]
 [Group]
+
+
+[Test]
+Test many ROOT().
+
+[Give]
+abcdef
+
+[When]
+bnf = ( 'a' ROOT('b') 'c' )  ( 'd' ROOT('e') 'f' )
+
+[Then]
+[Group]
+    [Ident] b
+        [Ident] a
+        [Ident] c
+    [Ident] e
+        [Ident] d
+        [Ident] f
+
+
+[Test]
+Test many ROOT().
+
+[Give]
+abcde
+
+[When]
+bnf = ( 'a' ROOT('b') 'c' )  ( 'd' 'e' )
+
+[Then]
+[Group]
+    [Ident] b
+        [Ident] a
+        [Ident] c
+    [Ident] d
+    [Ident] e
