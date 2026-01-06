@@ -75,11 +75,18 @@ func (c *Compiler) term(out *AST) bool {
 
 func (c *Compiler) factor(out *AST) bool {
 	c.ws()
-	return (c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") ||
-		c.function(out) ||
-		c.value(out)) &&
-		(c.typ(out) || true) &&
-		(c.quantifier(out) || true)
+	if c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") || c.function(out) {
+		c.typ(out)
+		c.quantifier(out)
+		c.ignoreFlag(out)
+		return true
+	}
+	if c.value(out) {
+		c.typ(out)
+		_ = c.quantifier(out) && c.ignoreFlag(out)
+		return true
+	}
+	return false
 }
 
 func (c *Compiler) function(out *AST) bool {

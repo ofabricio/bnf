@@ -71,6 +71,23 @@ root = 'One'i 'Two' 'Three'i 'Four'
 
 
 [Test]
+Test that ()i prevents a token from being emitted.
+
+[Give]
+abcdefghhhi
+
+[When]
+bnf = 'a' MATCH('b' 'c')i 'd' ( 'e' 'f' )i 'g' 'h'+i 'i'
+
+[Then]
+[Group]
+    [Ident] a
+    [Ident] d
+    [Ident] g
+    [Ident] i
+
+
+[Test]
 Test that "And" is using a new variable when looping, instead of "out" directly.
 
 [Give]

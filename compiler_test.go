@@ -23,6 +23,7 @@ func ExampleCompile() {
 		n = GROUP( a b c )
 		o = JOIN( a b c )
 		p = 'a'i 'b'r 'c'ri
+		q = MATCH( a )i ( b )i c+i
 	`
 
 	v := bnf.Compile(s)
@@ -154,4 +155,15 @@ func ExampleCompile() {
 	//             [Regex] ^b
 	//             [Ignore]
 	//                 [Regex] ^c
+	//     [Stmt]
+	//         [Ident] q
+	//         [And]
+	//             [Ignore]
+	//                 [MATCH]
+	//                     [Ident] a
+	//             [Ignore]
+	//                 [Ident] b
+	//             [Ignore]
+	//                 [+]
+	//                     [Ident] c
 }
