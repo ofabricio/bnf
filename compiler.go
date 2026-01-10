@@ -123,8 +123,8 @@ func (c *Compiler) function(out *AST) bool {
 		*out = AST{Type: "LOAD"}
 		return true
 	}
-	if c.s.Match("SCAN") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
-		*out = AST{Type: "SCAN", Next: []AST{arg}}
+	if c.s.Match("FIND") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
+		*out = AST{Type: "FIND", Next: []AST{arg}}
 		return true
 	}
 	return false

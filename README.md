@@ -109,7 +109,7 @@ Homework: try adding support for whitespaces, numbers, booleans and null.
 | `TEXT(a)` | Add a text node in the tree. |
 | `SAVE(a)` | Save a token to be loaded with `LOAD()`. |
 | `LOAD()` | Load a token saved with `SAVE()`. |
-| `SCAN(a)` | Scan through the entire input text. Useful to collect data. |
+| `FIND(a)` | Scan through the input text until a match is found and emit it. |
 
 ### Default identifiers
 
@@ -530,7 +530,7 @@ INP := `
 `
 
 BNF := `
-    root = SCAN( pair )
+    root = FIND( pair )+
     pair = val '='i ( val | TEXT('Default Value') )
      val = '\w+'r
 `
@@ -580,9 +580,9 @@ bnf.Print(v)
 //     [Ident] </a>
 ```
 
-### SCAN
+### FIND
 
-This function scans through the entire text input; this is useful to collect data.
+This function scans through the input text until a match is found and emit it.
 
 ```go
 INP := `The standard chunk of Lorem Ipsum used since the 1500s
@@ -592,7 +592,7 @@ reproduced in their exact original form, accompanied by English
 versions from the 1914 translation by H. Rackham.`
 
 BNF := `
-    root = SCAN(ver | num)
+    root = FIND(ver | num)+
      num = '\d+'r
      ver = MATCH(num '.' num '.' num)
 `
