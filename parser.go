@@ -2,6 +2,7 @@ package bnf
 
 import (
 	"regexp"
+	"strings"
 	"unicode"
 
 	"github.com/ofabricio/scan"
@@ -247,9 +248,10 @@ func flatten(tree AST, depth int) []AST {
 }
 
 func Join(tree []AST) string {
-	var out string
+	var out strings.Builder
 	for _, n := range tree {
-		out += n.Text + Join(n.Next)
+		out.WriteString(n.Text)
+		out.WriteString(Join(n.Next))
 	}
-	return out
+	return out.String()
 }
