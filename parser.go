@@ -168,6 +168,7 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 }
 
 func (p *Parser) parseIdent(ident string, out *[]AST) bool {
+	// TODO: optimize with a map.
 	for _, stmt := range p.bnf.Next {
 		if stmt.Next[0].Text == ident {
 			return p.parse(stmt, out)
