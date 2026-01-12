@@ -51,8 +51,6 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 				return true
 			}
 		}
-	case "ROOT":
-		return p.parse(bnf.Next[0], out)
 	case "SAVE":
 		var v []AST
 		if p.parse(bnf.Next[0], &v) {
@@ -77,6 +75,20 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 			p.emitIdent(out, p.cur.Text(m))
 			return true
 		}
+	case "ROOT":
+		var v []AST
+		if !p.parse(bnf.Next[0], &v) {
+			return false
+		}
+		if len(v) >= 2 {
+			r := v[1]
+			r.Next = append(r.Next, v[0])
+			r.Next = append(r.Next, v[2:]...)
+			p.emit(out, r)
+			return true
+		}
+		p.emit(out, v...)
+		return true
 	case "GROUP":
 		var v []AST
 		for _, n := range bnf.Next {
@@ -88,20 +100,12 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		return true
 	case "And":
 		m := p.cur.Mark()
-		var v, r []AST
+		var v []AST
 		for _, n := range bnf.Next {
-			vr := &v
-			if n.Type == "ROOT" {
-				vr = &r
-			}
-			if !p.parse(n, vr) {
+			if !p.parse(n, &v) {
 				p.cur.Move(m)
 				return false
 			}
-		}
-		if len(r) > 0 {
-			r[0].Next = v
-			v = r[:1]
 		}
 		p.emit(out, v...)
 		return true

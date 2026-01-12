@@ -281,8 +281,8 @@ Test Type.
 6+5*(4+3)*2
 
 [When]
-expr   = term   ROOT('+'):Opr expr | term
-term   = factor ROOT('*'):Opr term | factor
+expr   = ROOT(term   '+':Opr expr) | term
+term   = ROOT(factor '*':Opr term) | factor
 factor = '('i expr ')'i | value:Val
 value  = '\d+'r
 
@@ -547,14 +547,38 @@ root = FIND(ver | num)+
 
 
 [Test]
-Test Example 1 (Expression).
+Test Example 1 (Expression) with recursion.
 
 [Give]
 6+5*(4+3)*2
 
 [When]
-expr   = term   ROOT('+') expr | term
-term   = factor ROOT('*') term | factor
+expr   = ROOT( term   '+' expr ) | term
+term   = ROOT( factor '*' term ) | factor
+factor = '('i expr ')'i | value
+value  = '\d+'r
+
+[Then]
+[Ident] +
+    [Ident] 6
+    [Ident] *
+        [Ident] 5
+        [Ident] *
+            [Ident] +
+                [Ident] 4
+                [Ident] 3
+            [Ident] 2
+
+
+[Test]
+Test Example 1 (Expression) without recursion.
+
+[Give]
+6+5*(4+3)*2
+
+[When]
+expr   = ROOT( term   ( '+' expr )? )
+term   = ROOT( factor ( '*' term )? )
 factor = '('i expr ')'i | value
 value  = '\d+'r
 
@@ -604,7 +628,7 @@ Test JOIN Example.
 1+1 2+2 3+3 4+4
 
 [When]
-root = (num '+' num) SP JOIN(num '+' num) SP JOIN(num ROOT('+') num) SP JOIN(num '+'i num)
+root = (num '+' num) SP JOIN(num '+' num) SP JOIN(ROOT(num '+' num)) SP JOIN(num '+'i num)
  num = '\d+'r
 
 [Then]
@@ -624,7 +648,7 @@ Test MATCH Example.
 1+1 2+2 3+3 4+4
 
 [When]
-root = (num '+' num) SP MATCH(num '+' num) SP MATCH(num ROOT('+') num) SP MATCH(num '+'i num)
+root = (num '+' num) SP MATCH(num '+' num) SP MATCH(ROOT(num '+' num)) SP MATCH(num '+'i num)
  num = '\d+'r
 
 [Then]
@@ -727,37 +751,29 @@ bnf = ('a'?):val
 
 
 [Test]
-Test many ROOT().
-
-[Give]
-abcdef
-
-[When]
-bnf = ( 'a' ROOT('b') 'c' )  ( 'd' ROOT('e') 'f' )
-
-[Then]
-[Group]
-    [Ident] b
-        [Ident] a
-        [Ident] c
-    [Ident] e
-        [Ident] d
-        [Ident] f
-
-
-[Test]
-Test many ROOT().
+Test ROOT().
 
 [Give]
 abcde
+ab
+a
+x
 
 [When]
-bnf = ( 'a' ROOT('b') 'c' )  ( 'd' 'e' )
+bnf = ROOT( 'a' 'b' 'c' 'd' 'e' ) NL
+      ROOT( 'a' 'b' ) NL
+      ROOT( 'a' ) NL
+      ( ROOT( 'y' ) | TEXT('case false ok') )
 
 [Then]
 [Group]
     [Ident] b
         [Ident] a
         [Ident] c
-    [Ident] d
-    [Ident] e
+        [Ident] d
+        [Ident] e
+    [Ident] b
+        [Ident] a
+    [Ident] a
+    [Ident] case false ok
+

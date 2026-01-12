@@ -26,8 +26,8 @@ func main() {
 	INP := `6+5*(4+3)*2`
 
 	BNF := `
-	    expr   = term   ROOT('+') expr | term
-	    term   = factor ROOT('*') term | factor
+	    expr   = ROOT(term   '+' expr) | term
+	    term   = ROOT(factor '*' term) | factor
 	    factor = '('i expr ')'i | value
 	    value  = '\d+'r
 	`
@@ -101,7 +101,7 @@ Homework: try adding support for whitespaces, numbers, booleans and null.
 | `'...'` | Match a plain text string. This emits a token. |
 | `'...'r` | The string is a Regular Expression. |
 | `'...'i` | Ignore the token (do not emit it). |
-| `ROOT(a)` | Make the token a root token. Works only in a logical AND operation. |
+| `ROOT(a b c)` | Make `b` a root token. |
 | `GROUP(a)` | Group the tokens. |
 | `ANYNOT(a)` | Match any character that is not `a`. |
 | `JOIN(a)` | Join nodes into one. |
@@ -362,7 +362,7 @@ In the example below, note:
 INP := `1+1 2+2 3+3 4+4`
 
 BNF := `
-    root = (num '+' num) SP JOIN(num '+' num) SP JOIN(num ROOT('+') num) SP JOIN(num '+'i num)
+    root = (num '+' num) SP JOIN(num '+' num) SP JOIN(ROOT(num '+' num)) SP JOIN(num '+'i num)
      num = '\d+'r
 `
 
@@ -402,7 +402,7 @@ In the example below, note:
 INP := `1+1 2+2 3+3 4+4`
 
 BNF := `
- root = (num '+' num) SP MATCH(num '+' num) SP MATCH(num ROOT('+') num) SP MATCH(num '+'i num)
+ root = (num '+' num) SP MATCH(num '+' num) SP MATCH(ROOT(num '+' num)) SP MATCH(num '+'i num)
   num = '\d+'r
 `
 
@@ -443,16 +443,13 @@ bnf.Print(v)
 
 ### ROOT
 
-This function makes the node a root node of a branch.
-It works only in a logical [And](#and).
-It is not possible to have two `ROOT` functions in the same `And` sequence; use parentheses to start
-a new sequence.
+This function takes 3 arguments and when all of them match it makes the second argument a root node.
 
 ```go
 INP := `2+3`
 
 BNF := `
-    root = '2' ROOT('+') '3'
+    root = ROOT('2' '+' '3')
 `
 
 b := bnf.Compile(BNF)
