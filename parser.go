@@ -91,10 +91,8 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		return true
 	case "GROUP":
 		var v []AST
-		for _, n := range bnf.Next {
-			if !p.parse(n, &v) {
-				return false
-			}
+		if !p.parse(bnf.Next[0], &v) {
+			return false
 		}
 		p.emit(out, AST{Type: "Group", Next: v})
 		return true
