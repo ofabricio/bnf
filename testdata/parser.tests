@@ -281,10 +281,10 @@ Test Type.
 6+5*(4+3)*2
 
 [When]
-expr   = ROOT(term   '+':Opr expr) | term
-term   = ROOT(factor '*':Opr term) | factor
-factor = '('i expr ')'i | value:Val
-value  = '\d+'r
+expr = ROOT(term '+':Opr expr) | term
+term = ROOT(fact '*':Opr term) | fact
+fact = '('i expr ')'i | numb:Val
+numb = '\d+'r
 
 [Then]
 [Opr] +
@@ -553,10 +553,10 @@ Test Example 1 (Expression) with recursion.
 6+5*(4+3)*2
 
 [When]
-expr   = ROOT( term   '+' expr ) | term
-term   = ROOT( factor '*' term ) | factor
-factor = '('i expr ')'i | value
-value  = '\d+'r
+expr = ROOT(term '+' expr) | term
+term = ROOT(fact '*' term) | fact
+fact = '('i expr ')'i | numb
+numb = '\d+'r
 
 [Then]
 [Ident] +
@@ -577,10 +577,10 @@ Test Example 1 (Expression) without recursion.
 6+5*(4+3)*2
 
 [When]
-expr   = ROOT( term   ( '+' expr )? )
-term   = ROOT( factor ( '*' term )? )
-factor = '('i expr ')'i | value
-value  = '\d+'r
+expr = ROOT(term ('+' expr)?)
+term = ROOT(fact ('*' term)?)
+fact = '('i expr ')'i | numb
+numb = '\d+'r
 
 [Then]
 [Ident] +

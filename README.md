@@ -23,30 +23,30 @@ import "github.com/ofabricio/bnf"
 
 func main() {
 
-	INP := `6+5*(4+3)*2`
+    INP := `6+5*(4+3)*2`
 
-	BNF := `
-	    expr   = ROOT(term   '+' expr) | term
-	    term   = ROOT(factor '*' term) | factor
-	    factor = '('i expr ')'i | value
-	    value  = '\d+'r
-	`
+    BNF := `
+        expr = ROOT(term '+' expr) | term
+        term = ROOT(fact '*' term) | fact
+        fact = '('i expr ')'i | numb
+        numb = '\d+'r
+    `
 
-	b := bnf.Compile(BNF)
-	v := bnf.Parse(b, INP)
+    b := bnf.Compile(BNF)
+    v := bnf.Parse(b, INP)
 
-	bnf.Print(v)
+    bnf.Print(v)
 
-	// Output:
-	// [Ident] +
-	//     [Ident] 6
-	//     [Ident] *
-	//         [Ident] 5
-	//         [Ident] *
-	//             [Ident] +
-	//                 [Ident] 4
-	//                 [Ident] 3
-	//             [Ident] 2
+    // Output:
+    // [Ident] +
+    //     [Ident] 6
+    //     [Ident] *
+    //         [Ident] 5
+    //         [Ident] *
+    //             [Ident] +
+    //                 [Ident] 4
+    //                 [Ident] 3
+    //             [Ident] 2
 }
 ```
 
@@ -62,33 +62,33 @@ import "github.com/ofabricio/bnf"
 
 func main() {
 
-	INP := `{"name":"John","addresses":[{"zip":"111"},{"zip":"222"}]}`
+    INP := `{"name":"John","addresses":[{"zip":"111"},{"zip":"222"}]}`
 
-	BNF := `
- 	    val = obj | arr | str
-	    obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
-	    arr = GROUP( '['i val (','i val)* ']'i ):Array
-	    okv = str ':'i val
-	    str = MATCH( '"' ( ANYNOT('"' | '\\') | '\\' any )* '"' )
-	`
+    BNF := `
+        val = obj | arr | str
+        obj = GROUP( '{'i okv (','i okv)* '}'i ):Object
+        arr = GROUP( '['i val (','i val)* ']'i ):Array
+        okv = str ':'i val
+        str = MATCH( '"' ( ANYNOT('"' | '\\') | '\\' any )* '"' )
+    `
 
-	b := bnf.Compile(BNF)
-	v := bnf.Parse(b, INP)
+    b := bnf.Compile(BNF)
+    v := bnf.Parse(b, INP)
 
-	bnf.Print(v)
+    bnf.Print(v)
 
-	// Output:
-	// [Object]
-	//     [Ident] "name"
-	//     [Ident] "John"
-	//     [Ident] "addresses"
-	//     [Array]
-	//         [Object]
-	//             [Ident] "zip"
-	//             [Ident] "111"
-	//         [Object]
-	//             [Ident] "zip"
-	//             [Ident] "222"
+    // Output:
+    // [Object]
+    //     [Ident] "name"
+    //     [Ident] "John"
+    //     [Ident] "addresses"
+    //     [Array]
+    //         [Object]
+    //             [Ident] "zip"
+    //             [Ident] "111"
+    //         [Object]
+    //             [Ident] "zip"
+    //             [Ident] "222"
 }
 ```
 
