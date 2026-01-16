@@ -15,7 +15,7 @@ func Write(w io.Writer, a AST) {
 }
 
 func write(w io.Writer, a AST, depth int) {
-	for i := 0; i < depth; i++ {
+	for range depth {
 		fmt.Fprint(w, "    ")
 	}
 	if len(a.Text) == 0 {
