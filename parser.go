@@ -2,6 +2,7 @@ package bnf
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 
@@ -62,6 +63,14 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		return p.parse(AST{Type: "Plain", Text: p.sav}, out)
 	case "TEXT":
 		p.emitIdent(out, bnf.Next[0].Text)
+		return true
+	case "REVERSE":
+		var v []AST
+		if !p.parse(bnf.Next[0], &v) {
+			return false
+		}
+		slices.Reverse(v)
+		p.emit(out, v...)
 		return true
 	case "JOIN":
 		var v []AST

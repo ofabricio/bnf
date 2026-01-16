@@ -777,3 +777,32 @@ bnf = ROOT( 'a' 'b' 'c' 'd' 'e' ) NL
     [Ident] a
     [Ident] case false ok
 
+
+[Test]
+Test REVERSE().
+
+[Give]
+abcd
+123
+xy
+w
+
+[When]
+bnf = REVERSE( 'a' 'b' 'c' 'd' ) NL
+      REVERSE( '1' '2' '3' ) NL
+      REVERSE( 'x' 'y' ) NL
+      REVERSE( 'w' )
+
+[Then]
+[Group]
+    [Ident] d
+    [Ident] c
+    [Ident] b
+    [Ident] a
+    [Ident] 3
+    [Ident] 2
+    [Ident] 1
+    [Ident] y
+    [Ident] x
+    [Ident] w
+

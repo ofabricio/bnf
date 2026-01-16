@@ -127,6 +127,10 @@ func (c *Compiler) function(out *AST) bool {
 		*out = AST{Type: "FIND", Next: []AST{arg}}
 		return true
 	}
+	if c.s.Match("REVERSE") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
+		*out = AST{Type: "REVERSE", Next: []AST{arg}}
+		return true
+	}
 	return false
 }
 

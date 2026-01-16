@@ -110,6 +110,7 @@ Homework: try adding support for whitespaces, numbers, booleans and null.
 | `SAVE(a)` | Save a token to be loaded with `LOAD()`. |
 | `LOAD()` | Load a token saved with `SAVE()`. |
 | `FIND(a)` | Scan through the input text until a match is found and emit it. |
+| `REVERSE(a b)` | Reverse the token positions. |
 
 ### Default identifiers
 
@@ -605,4 +606,27 @@ bnf.Print(v)
 //     [Ident] 1.10.32
 //     [Ident] 1.10.33
 //     [Ident] 1914
+```
+
+### REVERSE
+
+This function reverses the token positions.
+
+```go
+INP := `OneTwoThree`
+
+BNF := `
+    root = REVERSE('One' 'Two' 'Three')
+`
+
+b := bnf.Compile(BNF)
+v := bnf.Parse(b, INP)
+
+bnf.Print(v)
+
+// Output:
+// [Group]
+//     [Ident] Three
+//     [Ident] Two
+//     [Ident] One
 ```
