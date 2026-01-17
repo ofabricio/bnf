@@ -1,7 +1,6 @@
 package bnf
 
 import (
-	"regexp"
 	"slices"
 	"strings"
 	"unicode"
@@ -9,18 +8,18 @@ import (
 	"github.com/ofabricio/scan"
 )
 
-func Parse(bnf AST, src string) AST {
+func Parse(bnf Root, src string) AST {
 	return NewParser(bnf, src).Parse()
 }
 
-func NewParser(bnf AST, src string) *Parser {
+func NewParser(bnf Root, src string) *Parser {
 	return &Parser{src: src, cur: scan.Bytes(src), bnf: bnf}
 }
 
 type Parser struct {
 	src string
 	cur scan.Bytes
-	bnf AST
+	bnf Root
 	sav string
 }
 
@@ -35,80 +34,21 @@ func (p *Parser) Parse() AST {
 	return AST{Type: "Group", Next: v}
 }
 
-func (p *Parser) parse(bnf AST, out *[]AST) bool {
-	switch bnf.Type {
-	case "Root":
-		for _, stmt := range bnf.Next {
+func (p *Parser) parse(bnf BNF, out *[]AST) bool {
+	switch bnf := bnf.(type) {
+	case Root:
+		for _, stmt := range bnf.Stmts {
 			return p.parse(stmt, out)
 		}
-	case "Stmt":
+	case Stmt:
 		s := p.sav
-		v := p.parse(bnf.Next[1], out)
+		v := p.parse(bnf.Expr, out)
 		p.sav = s
 		return v
-	case "FIND":
-		for ; p.cur.More(); p.cur.Next() {
-			if p.parse(bnf.Next[0], out) {
-				return true
-			}
-		}
-	case "SAVE":
-		var v []AST
-		if p.parse(bnf.Next[0], &v) {
-			p.sav = v[0].Text
-			p.emit(out, v...)
-			return true
-		}
-	case "LOAD":
-		return p.parse(AST{Type: "Plain", Text: p.sav}, out)
-	case "TEXT":
-		p.emitIdent(out, bnf.Next[0].Text)
-		return true
-	case "REVERSE":
-		var v []AST
-		if !p.parse(bnf.Next[0], &v) {
-			return false
-		}
-		slices.Reverse(v)
-		p.emit(out, v...)
-		return true
-	case "JOIN":
-		var v []AST
-		if p.parse(bnf.Next[0], &v) {
-			p.emitIdent(out, Join(v))
-			return true
-		}
-	case "MATCH":
-		var v []AST
-		if m := p.cur.Mark(); p.parse(bnf.Next[0], &v) {
-			p.emitIdent(out, p.cur.Text(m))
-			return true
-		}
-	case "ROOT":
-		var v []AST
-		if !p.parse(bnf.Next[0], &v) {
-			return false
-		}
-		if len(v) >= 2 {
-			r := v[1]
-			r.Next = append(r.Next, v[0])
-			r.Next = append(r.Next, v[2:]...)
-			p.emit(out, r)
-			return true
-		}
-		p.emit(out, v...)
-		return true
-	case "GROUP":
-		var v []AST
-		if !p.parse(bnf.Next[0], &v) {
-			return false
-		}
-		p.emit(out, AST{Type: "Group", Next: v})
-		return true
-	case "And":
+	case ExprAnd:
 		m := p.cur.Mark()
 		var v []AST
-		for _, n := range bnf.Next {
+		for _, n := range bnf.And {
 			if !p.parse(n, &v) {
 				p.cur.Move(m)
 				return false
@@ -116,74 +56,140 @@ func (p *Parser) parse(bnf AST, out *[]AST) bool {
 		}
 		p.emit(out, v...)
 		return true
-	case "Or":
-		for _, n := range bnf.Next {
+	case ExprOr:
+		for _, n := range bnf.Or {
 			var v []AST
 			if p.parse(n, &v) {
 				p.emit(out, v...)
 				return true
 			}
 		}
-	case "?":
-		return p.parse(bnf.Next[0], out) || true
-	case "*":
-		c := 0
-		for p.parse(bnf.Next[0], out) {
-			c++
+	case Quantifier:
+		switch bnf.Name {
+		case "?":
+			return p.parse(bnf.Expr, out) || true
+		case "*":
+			c := 0
+			for p.parse(bnf.Expr, out) {
+				c++
+			}
+			return c >= 0
+		case "+":
+			c := 0
+			for p.parse(bnf.Expr, out) {
+				c++
+			}
+			return c > 0
 		}
-		return c >= 0
-	case "+":
-		c := 0
-		for p.parse(bnf.Next[0], out) {
-			c++
+	case Function:
+		switch bnf.Name {
+		case "FIND":
+			for ; p.cur.More(); p.cur.Next() {
+				if p.parse(bnf.Expr, out) {
+					return true
+				}
+			}
+		case "SAVE":
+			var v []AST
+			if p.parse(bnf.Expr, &v) {
+				p.sav = v[0].Text
+				p.emit(out, v...)
+				return true
+			}
+		case "LOAD":
+			return p.parse(Plain{Text: p.sav}, out)
+		case "TEXT":
+			if v, ok := bnf.Expr.(Plain); ok {
+				p.emitIdent(out, v.Text)
+			} else {
+				p.emitIdent(out, "")
+			}
+			return true
+		case "REVERSE":
+			var v []AST
+			if !p.parse(bnf.Expr, &v) {
+				return false
+			}
+			slices.Reverse(v)
+			p.emit(out, v...)
+			return true
+		case "JOIN":
+			var v []AST
+			if p.parse(bnf.Expr, &v) {
+				p.emitIdent(out, Join(v))
+				return true
+			}
+		case "MATCH":
+			var v []AST
+			if m := p.cur.Mark(); p.parse(bnf.Expr, &v) {
+				p.emitIdent(out, p.cur.Text(m))
+				return true
+			}
+		case "ROOT":
+			var v []AST
+			if !p.parse(bnf.Expr, &v) {
+				return false
+			}
+			if len(v) >= 2 {
+				r := v[1]
+				r.Next = append(r.Next, v[0])
+				r.Next = append(r.Next, v[2:]...)
+				p.emit(out, r)
+				return true
+			}
+			p.emit(out, v...)
+			return true
+		case "GROUP":
+			var v []AST
+			if !p.parse(bnf.Expr, &v) {
+				return false
+			}
+			p.emit(out, AST{Type: "Group", Next: v})
+			return true
+		case "ANYNOT":
+			var v []AST
+			if m := p.cur.Mark(); p.parse(bnf.Expr, &v) {
+				p.cur.Move(m)
+				return false
+			} else if p.cur.Next() {
+				p.emitIdent(out, p.cur.Text(m))
+				return true
+			}
 		}
-		return c > 0
-	case "Type":
+	case Type:
 		var v []AST
-		ok := p.parse(bnf.Next[0], &v)
+		ok := p.parse(bnf.Expr, &v)
 		if ok && len(v) > 0 {
-			v[0].Type = bnf.Text
+			v[0].Type = bnf.Ident.Text
 			p.emit(out, v[0])
 		}
 		return ok
-	case "ANYNOT":
+	case Ignore:
 		var v []AST
-		if m := p.cur.Mark(); p.parse(bnf.Next[0], &v) {
-			p.cur.Move(m)
-			return false
-		} else if p.cur.Next() {
+		return p.parse(bnf.Expr, &v)
+	case Plain:
+		if m := p.cur.Mark(); p.cur.Match(bnf.Text) {
 			p.emitIdent(out, p.cur.Text(m))
 			return true
 		}
-	case "Ignore":
-		var v []AST
-		return p.parse(bnf.Next[0], &v)
-	case "Ident":
-		return p.parseIdent(bnf.Text, out) ||
-			p.matchDefaultIdent(bnf.Text) ||
-			p.matchDefaultIdentThatEmit(bnf.Text, out)
-	case "Regex":
-		if v := regexp.MustCompile(bnf.Text).FindIndex(p.cur); v != nil {
+	case Regex:
+		if v := bnf.Regx.FindIndex(p.cur); v != nil {
 			m := p.cur.Mark()
 			p.cur.Advance(v[1])
 			p.emitIdent(out, p.cur.Text(m))
 			return true
 		}
-	case "Plain":
-		if m := p.cur.Mark(); p.cur.Match(bnf.Text) {
-			p.emitIdent(out, p.cur.Text(m))
-			return true
-		}
+	case Ident:
+		return p.parseIdent(bnf.Text, out) ||
+			p.matchDefaultIdent(bnf.Text) ||
+			p.matchDefaultIdentThatEmit(bnf.Text, out)
 	}
 	return false
 }
 
 func (p *Parser) parseIdent(ident string, out *[]AST) bool {
-	// TODO: optimize with a map.
-	for _, stmt := range p.bnf.Next {
-		if stmt.Next[0].Text == ident {
-			return p.parse(stmt, out)
-		}
+	if stmt, ok := p.bnf.Stmtm[ident]; ok {
+		return p.parse(stmt, out)
 	}
 	return false
 }

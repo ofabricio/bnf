@@ -1,5 +1,7 @@
 package bnf
 
+import "regexp"
+
 type AST struct {
 	Type string
 	Text string
@@ -7,16 +9,54 @@ type AST struct {
 	Next []AST
 }
 
-func compact(a *AST) {
-	if len(a.Next) == 1 {
-		*a = a.Next[0]
-	}
+type BNF any
+
+type Root struct {
+	Stmts []Stmt
+	Stmtm map[string]Stmt
 }
 
-func swapRoot(a *AST) {
-	if len(a.Next) == 1 && a.Next[0].Type == "ROOT" {
-		// inp: Type[Root[Ident]]
-		// out: Root[Type[Ident]]
-		a.Next[0], a.Next[0].Next[0], *a = a.Next[0].Next[0], *a, a.Next[0]
-	}
+type Stmt struct {
+	Ident Ident
+	Expr  BNF
+}
+
+type Ident struct {
+	Text string
+}
+
+type ExprAnd struct {
+	And []BNF
+}
+
+type ExprOr struct {
+	Or []BNF
+}
+
+type Quantifier struct {
+	Name string
+	Expr BNF
+}
+
+type Function struct {
+	Name string
+	Expr BNF
+}
+
+type Ignore struct {
+	Expr BNF
+}
+
+type Plain struct {
+	Text string
+}
+
+type Regex struct {
+	Text string
+	Regx *regexp.Regexp
+}
+
+type Type struct {
+	Ident Ident
+	Expr  BNF
 }

@@ -24,55 +24,49 @@ func ExampleCompile() {
 		o = JOIN( a b c )
 		p = 'a'i 'b'r 'c'ri
 		q = MATCH( a )i ( b )i c+i
+		r = a:id
+		s = TEXT() TEXT(a)
 	`
 
 	v := bnf.Compile(s)
 
-	bnf.Print(v)
+	bnf.PrintBNF(v)
 
 	// Output:
 	// [Root]
-	//     [Stmt]
+	//     [Stmt] a
 	//         [Ident] a
-	//         [Ident] a
-	//     [Stmt]
-	//         [Ident] b
+	//     [Stmt] b
 	//         [And]
 	//             [Ident] a
 	//             [Ident] b
-	//     [Stmt]
-	//         [Ident] c
+	//     [Stmt] c
 	//         [Or]
 	//             [Ident] a
 	//             [Ident] b
-	//     [Stmt]
-	//         [Ident] d
+	//     [Stmt] d
 	//         [And]
 	//             [Ident] a
 	//             [Ident] b
 	//             [Ident] c
-	//     [Stmt]
-	//         [Ident] e
+	//     [Stmt] e
 	//         [Or]
 	//             [And]
 	//                 [Ident] a
 	//                 [Ident] b
 	//             [Ident] c
-	//     [Stmt]
-	//         [Ident] f
+	//     [Stmt] f
 	//         [Or]
 	//             [Ident] a
 	//             [And]
 	//                 [Ident] b
 	//                 [Ident] c
-	//     [Stmt]
-	//         [Ident] g
+	//     [Stmt] g
 	//         [Or]
 	//             [Ident] a
 	//             [Ident] b
 	//             [Ident] c
-	//     [Stmt]
-	//         [Ident] h
+	//     [Stmt] h
 	//         [Or]
 	//             [And]
 	//                 [Ident] a
@@ -80,16 +74,14 @@ func ExampleCompile() {
 	//             [And]
 	//                 [Ident] c
 	//                 [Ident] d
-	//     [Stmt]
-	//         [Ident] i
+	//     [Stmt] i
 	//         [Or]
 	//             [Ident] a
 	//             [And]
 	//                 [Ident] b
 	//                 [Ident] c
 	//             [Ident] d
-	//     [Stmt]
-	//         [Ident] j
+	//     [Stmt] j
 	//         [And]
 	//             [Ident] a
 	//             [Or]
@@ -103,8 +95,7 @@ func ExampleCompile() {
 	//                         [Ident] e
 	//                         [Ident] f
 	//                     [Ident] g
-	//     [Stmt]
-	//         [Ident] k
+	//     [Stmt] k
 	//         [And]
 	//             [Or]
 	//                 [Ident] a
@@ -112,58 +103,60 @@ func ExampleCompile() {
 	//             [Or]
 	//                 [Ident] c
 	//                 [Ident] d
-	//     [Stmt]
-	//         [Ident] l
+	//     [Stmt] l
 	//         [And]
-	//             [*]
+	//             [Quantifier] *
 	//                 [Ident] a
-	//             [+]
+	//             [Quantifier] +
 	//                 [Ident] b
-	//             [*]
+	//             [Quantifier] *
 	//                 [Or]
-	//                     [?]
+	//                     [Quantifier] ?
 	//                         [And]
 	//                             [Ident] c
 	//                             [Ident] d
 	//                     [Ident] e
-	//     [Stmt]
-	//         [Ident] m
-	//         [ROOT]
+	//     [Stmt] m
+	//         [Function] ROOT
 	//             [And]
 	//                 [Ident] a
 	//                 [Ident] b
 	//                 [Ident] c
-	//     [Stmt]
-	//         [Ident] n
-	//         [GROUP]
+	//     [Stmt] n
+	//         [Function] GROUP
 	//             [And]
 	//                 [Ident] a
 	//                 [Ident] b
 	//                 [Ident] c
-	//     [Stmt]
-	//         [Ident] o
-	//         [JOIN]
+	//     [Stmt] o
+	//         [Function] JOIN
 	//             [And]
 	//                 [Ident] a
 	//                 [Ident] b
 	//                 [Ident] c
-	//     [Stmt]
-	//         [Ident] p
+	//     [Stmt] p
 	//         [And]
 	//             [Ignore]
 	//                 [Plain] a
 	//             [Regex] ^b
 	//             [Ignore]
 	//                 [Regex] ^c
-	//     [Stmt]
-	//         [Ident] q
+	//     [Stmt] q
 	//         [And]
 	//             [Ignore]
-	//                 [MATCH]
+	//                 [Function] MATCH
 	//                     [Ident] a
 	//             [Ignore]
 	//                 [Ident] b
 	//             [Ignore]
-	//                 [+]
+	//                 [Quantifier] +
 	//                     [Ident] c
+	//     [Stmt] r
+	//         [Type] id
+	//             [Ident] a
+	//     [Stmt] s
+	//         [And]
+	//             [Function] TEXT
+	//             [Function] TEXT
+	//                 [Ident] a
 }
