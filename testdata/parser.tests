@@ -299,6 +299,27 @@ numb = '\d+'r
 
 
 [Test]
+Test Type and recursion.
+It should retype just the first node.
+
+[Give]
+(4+3)+2
+
+[When]
+expr = term '+' expr | term:Term
+term = '('i expr ')'i | numb
+numb = '\d+'r
+
+[Then]
+[Group]
+    [Ident] 4
+    [Ident] +
+    [Term] 3
+    [Ident] +
+    [Term] 2
+
+
+[Test]
 Test Type and GROUP.
 
 [Give]

@@ -92,7 +92,7 @@ func (p *Parser) ParseNode(bnf BNF, out *[]AST) bool {
 		ok := p.ParseNode(bnf.Expr, &v)
 		if ok && len(v) > 0 {
 			v[0].Type = bnf.Ident.Text
-			p.Emit(out, v[0])
+			p.Emit(out, v...)
 		}
 		return ok
 	case Ignore:
