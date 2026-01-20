@@ -175,42 +175,33 @@ func (p *Parser) pos() int {
 	return len(p.src) - len(p.cur)
 }
 
-// Flatten returns a flat list of nodes. The
-// depth parameter specifies the maximum depth
-// to flatten; zero flattens the entire tree.
-func Flatten(tree AST, depth int) []AST {
-	if depth <= 0 {
-		depth = -2
-	}
-	return flatten(tree, depth+1)
-}
-
-func flatten(tree AST, depth int) []AST {
-	if len(tree.Next) == 0 || depth == 0 {
-		return []AST{tree}
-	}
-	var f []AST
-	for _, n := range tree.Next {
-		f = append(f, flatten(n, depth-1)...)
-	}
-	return f
-}
-
 var DefaultFuncs = map[string]Func{
-	"FIND":    funcFIND,
-	"SAVE":    funcSAVE,
-	"LOAD":    funcLOAD,
-	"TEXT":    funcTEXT,
-	"REVERSE": funcREVERSE,
-	"JOIN":    funcJOIN,
-	"MATCH":   funcMATCH,
-	"ROOT":    funcROOT,
-	"GROUP":   funcGROUP,
 	"ANYNOT":  funcANYNOT,
+	"FIND":    funcFIND,
+	"GROUP":   funcGROUP,
+	"JOIN":    funcJOIN,
+	"LOAD":    funcLOAD,
+	"MATCH":   funcMATCH,
+	"REVERSE": funcREVERSE,
+	"ROOT":    funcROOT,
+	"SAVE":    funcSAVE,
 	"SUM":     funcSUM,
+	"TEXT":    funcTEXT,
 }
 
 type Func func(p *Parser, arg BNF, out *[]AST) bool
+
+func funcANYNOT(p *Parser, arg BNF, out *[]AST) bool {
+	var v []AST
+	if m := p.cur.Mark(); p.ParseNode(arg, &v) {
+		p.cur.Move(m)
+		return false
+	} else if p.cur.Next() {
+		p.EmitIdent(out, p.cur.Text(m))
+		return true
+	}
+	return false
+}
 
 func funcFIND(p *Parser, arg BNF, out *[]AST) bool {
 	for ; p.cur.More(); p.cur.Next() {
@@ -221,36 +212,12 @@ func funcFIND(p *Parser, arg BNF, out *[]AST) bool {
 	return false
 }
 
-func funcSAVE(p *Parser, arg BNF, out *[]AST) bool {
-	var v []AST
-	if p.ParseNode(arg, &v) {
-		p.sav = v[0].Text
-		p.Emit(out, v...)
-		return true
-	}
-	return false
-}
-
-func funcLOAD(p *Parser, arg BNF, out *[]AST) bool {
-	return p.ParseNode(Plain{Text: p.sav}, out)
-}
-
-func funcTEXT(p *Parser, arg BNF, out *[]AST) bool {
-	if v, ok := arg.(Plain); ok {
-		p.EmitIdent(out, v.Text)
-	} else {
-		p.EmitIdent(out, "")
-	}
-	return true
-}
-
-func funcREVERSE(p *Parser, arg BNF, out *[]AST) bool {
+func funcGROUP(p *Parser, arg BNF, out *[]AST) bool {
 	var v []AST
 	if !p.ParseNode(arg, &v) {
 		return false
 	}
-	slices.Reverse(v)
-	p.Emit(out, v...)
+	p.Emit(out, AST{Type: "Group", Next: v})
 	return true
 }
 
@@ -263,6 +230,10 @@ func funcJOIN(p *Parser, arg BNF, out *[]AST) bool {
 	return false
 }
 
+func funcLOAD(p *Parser, arg BNF, out *[]AST) bool {
+	return p.ParseNode(Plain{Text: p.sav}, out)
+}
+
 func funcMATCH(p *Parser, arg BNF, out *[]AST) bool {
 	var v []AST
 	if m := p.cur.Mark(); p.ParseNode(arg, &v) {
@@ -270,6 +241,16 @@ func funcMATCH(p *Parser, arg BNF, out *[]AST) bool {
 		return true
 	}
 	return false
+}
+
+func funcREVERSE(p *Parser, arg BNF, out *[]AST) bool {
+	var v []AST
+	if !p.ParseNode(arg, &v) {
+		return false
+	}
+	slices.Reverse(v)
+	p.Emit(out, v...)
+	return true
 }
 
 func funcROOT(p *Parser, arg BNF, out *[]AST) bool {
@@ -288,22 +269,11 @@ func funcROOT(p *Parser, arg BNF, out *[]AST) bool {
 	return true
 }
 
-func funcGROUP(p *Parser, arg BNF, out *[]AST) bool {
+func funcSAVE(p *Parser, arg BNF, out *[]AST) bool {
 	var v []AST
-	if !p.ParseNode(arg, &v) {
-		return false
-	}
-	p.Emit(out, AST{Type: "Group", Next: v})
-	return true
-}
-
-func funcANYNOT(p *Parser, arg BNF, out *[]AST) bool {
-	var v []AST
-	if m := p.cur.Mark(); p.ParseNode(arg, &v) {
-		p.cur.Move(m)
-		return false
-	} else if p.cur.Next() {
-		p.EmitIdent(out, p.cur.Text(m))
+	if p.ParseNode(arg, &v) {
+		p.sav = v[0].Text
+		p.Emit(out, v...)
 		return true
 	}
 	return false
@@ -321,6 +291,15 @@ func funcSUM(p *Parser, arg BNF, out *[]AST) bool {
 		return true
 	}
 	return false
+}
+
+func funcTEXT(p *Parser, arg BNF, out *[]AST) bool {
+	if v, ok := arg.(Plain); ok {
+		p.EmitIdent(out, v.Text)
+	} else {
+		p.EmitIdent(out, "")
+	}
+	return true
 }
 
 func Join(tree []AST) string {
