@@ -9,6 +9,32 @@ import (
 	"github.com/ofabricio/bnf"
 )
 
+func Example_customFunction() {
+
+	INP := `One TWO`
+
+	BNF := `root = LOWERCASE('One') SP LOWERCASE('TWO')`
+
+	bnf.DefaultFuncs["LOWERCASE"] = func(p *bnf.Parser, arg bnf.BNF, out *[]bnf.AST) bool {
+		var v []bnf.AST
+		if p.ParseNode(arg, &v) {
+			p.EmitIdent(out, strings.ToLower(v[0].Text))
+			return true
+		}
+		return false
+	}
+
+	b := bnf.Compile(BNF)
+	v := bnf.Parse(b, INP)
+
+	bnf.Print(v)
+
+	// Output:
+	// [Group]
+	//     [Ident] one
+	//     [Ident] two
+}
+
 func Example_pos() {
 
 	INP := `One Two Three`

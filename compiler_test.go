@@ -19,13 +19,10 @@ func ExampleCompile() {
 		j = a ( b ( c | d ) | ( e | f ) g )
 		k = ( a | b ) ( c | d )
 		l = a * b+ ( ( c d ) ? | e )*
-		m = ROOT( a b c )
-		n = GROUP( a b c )
-		o = JOIN( a b c )
-		p = 'a'i 'b'r 'c'ri
-		q = MATCH( a )i ( b )i c+i
-		r = a:id
-		s = TEXT() TEXT(a)
+		m = FUNCA() FUNCB(a) FUNCC(a b)
+		n = 'a'i 'b'r 'c'ri
+		o = FUNC(a)i (b)i c+i
+		p = a:id
 	`
 
 	v := bnf.Compile(s)
@@ -117,46 +114,32 @@ func ExampleCompile() {
 	//                             [Ident] d
 	//                     [Ident] e
 	//     [Stmt] m
-	//         [Function] ROOT
-	//             [And]
+	//         [And]
+	//             [Function] FUNCA
+	//             [Function] FUNCB
 	//                 [Ident] a
-	//                 [Ident] b
-	//                 [Ident] c
+	//             [Function] FUNCC
+	//                 [And]
+	//                     [Ident] a
+	//                     [Ident] b
 	//     [Stmt] n
-	//         [Function] GROUP
-	//             [And]
-	//                 [Ident] a
-	//                 [Ident] b
-	//                 [Ident] c
-	//     [Stmt] o
-	//         [Function] JOIN
-	//             [And]
-	//                 [Ident] a
-	//                 [Ident] b
-	//                 [Ident] c
-	//     [Stmt] p
 	//         [And]
 	//             [Ignore]
 	//                 [Plain] a
 	//             [Regex] ^b
 	//             [Ignore]
 	//                 [Regex] ^c
-	//     [Stmt] q
+	//     [Stmt] o
 	//         [And]
 	//             [Ignore]
-	//                 [Function] MATCH
+	//                 [Function] FUNC
 	//                     [Ident] a
 	//             [Ignore]
 	//                 [Ident] b
 	//             [Ignore]
 	//                 [Quantifier] +
 	//                     [Ident] c
-	//     [Stmt] r
+	//     [Stmt] p
 	//         [Type] id
 	//             [Ident] a
-	//     [Stmt] s
-	//         [And]
-	//             [Function] TEXT
-	//             [Function] TEXT
-	//                 [Ident] a
 }

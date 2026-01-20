@@ -100,46 +100,14 @@ func (c *Compiler) factor(out *BNF) bool {
 }
 
 func (c *Compiler) function(out *BNF) bool {
-	var arg BNF
-	if c.s.Match("ROOT") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
-		*out = Function{Name: "ROOT", Expr: arg}
-		return true
-	}
-	if c.s.Match("GROUP") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
-		*out = Function{Name: "GROUP", Expr: arg}
-		return true
-	}
-	if c.s.Match("ANYNOT") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
-		*out = Function{Name: "ANYNOT", Expr: arg}
-		return true
-	}
-	if c.s.Match("JOIN") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
-		*out = Function{Name: "JOIN", Expr: arg}
-		return true
-	}
-	if c.s.Match("MATCH") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
-		*out = Function{Name: "MATCH", Expr: arg}
-		return true
-	}
-	if c.s.Match("TEXT") && c.s.MatchChar("(") && (c.expr(&arg) || true) && c.s.MatchChar(")") {
-		*out = Function{Name: "TEXT", Expr: arg}
-		return true
-	}
-	if c.s.Match("SAVE") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
-		*out = Function{Name: "SAVE", Expr: arg}
-		return true
-	}
-	if c.s.Match("LOAD") && c.s.MatchChar("(") && c.s.MatchChar(")") {
-		*out = Function{Name: "LOAD"}
-		return true
-	}
-	if c.s.Match("FIND") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
-		*out = Function{Name: "FIND", Expr: arg}
-		return true
-	}
-	if c.s.Match("REVERSE") && c.s.MatchChar("(") && c.expr(&arg) && c.s.MatchChar(")") {
-		*out = Function{Name: "REVERSE", Expr: arg}
-		return true
+	if m := c.s.Mark(); c.matchRegex(reIden) {
+		name := c.s.Text(m)
+		var arg BNF
+		if c.s.MatchChar("(") && (c.expr(&arg) || true) && c.s.MatchChar(")") {
+			*out = Function{Name: name, Expr: arg}
+			return true
+		}
+		c.s.Move(m)
 	}
 	return false
 }

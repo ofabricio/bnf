@@ -112,6 +112,8 @@ Homework: try adding support for whitespaces, numbers, booleans and null.
 | `FIND(a)` | Scan through the input text until a match is found and emit it. |
 | `REVERSE(a b)` | Reverse the token positions. |
 
+**Note:** there is support for custom functions by adding them to `bnf.DefaultFuncs` map.
+
 ### Default identifiers
 
 These identifiers don't need to be defined in the BNF.
