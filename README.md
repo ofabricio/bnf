@@ -111,6 +111,7 @@ Homework: try adding support for whitespaces, numbers, booleans and null.
 | `LOAD()` | Load a token saved with `SAVE()`. |
 | `FIND(a)` | Scan through the input text until a match is found and emit it. |
 | `REVERSE(a b)` | Reverse the token positions. |
+| `SUM(a)` | Sum aggregation. |
 
 **Note:** there is support for custom functions by adding them to `bnf.DefaultFuncs` map.
 
@@ -631,4 +632,25 @@ bnf.Print(v)
 //     [Ident] Three
 //     [Ident] Two
 //     [Ident] One
+```
+
+### SUM
+
+This function performs sum aggregation on numeric token values.
+
+```go
+INP := `It is $2 for the tomatos and $3.55 for the potatos.`
+
+BNF := `
+    root = SUM(FIND(v)+)
+       v = '$'i '\d+(\.\d+)?'r
+`
+
+b := bnf.Compile(BNF)
+v := bnf.Parse(b, INP)
+
+bnf.Print(v)
+
+// Output:
+// [Ident] 5.55
 ```

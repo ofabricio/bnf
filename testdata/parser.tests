@@ -806,3 +806,25 @@ bnf = REVERSE( 'a' 'b' 'c' 'd' ) NL
     [Ident] x
     [Ident] w
 
+
+[Test]
+Test SUM().
+
+[Give]
+1.02 2.31
+3 5
+(2(3(4)5)6)
+
+[When]
+r = SUM(f SP f) NL
+    SUM(d SP d) NL
+    SUM(e)
+d = '\d+'r
+f = '\d+\.\d+'r
+e = GROUP('('i (d e?)* ')'i)
+
+[Then]
+[Group]
+    [Ident] 3.33
+    [Ident] 8
+    [Ident] 20

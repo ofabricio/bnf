@@ -2,6 +2,7 @@ package bnf
 
 import (
 	"slices"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -206,6 +207,7 @@ var DefaultFuncs = map[string]Func{
 	"ROOT":    funcROOT,
 	"GROUP":   funcGROUP,
 	"ANYNOT":  funcANYNOT,
+	"SUM":     funcSUM,
 }
 
 type Func func(p *Parser, arg BNF, out *[]AST) bool
@@ -307,6 +309,20 @@ func funcANYNOT(p *Parser, arg BNF, out *[]AST) bool {
 	return false
 }
 
+func funcSUM(p *Parser, arg BNF, out *[]AST) bool {
+	var v []AST
+	if p.ParseNode(arg, &v) {
+		sum := 0.0
+		Walks(v, func(n AST) {
+			v, _ := strconv.ParseFloat(n.Text, 64)
+			sum += v
+		})
+		p.EmitIdent(out, strconv.FormatFloat(sum, 'f', -1, 64))
+		return true
+	}
+	return false
+}
+
 func Join(tree []AST) string {
 	var out strings.Builder
 	for _, n := range tree {
@@ -314,4 +330,36 @@ func Join(tree []AST) string {
 		out.WriteString(Join(n.Next))
 	}
 	return out.String()
+}
+
+// Flatten returns a flat list of nodes. The
+// depth parameter specifies the maximum depth
+// to flatten; zero flattens the entire tree.
+func Flatten(tree AST, depth int) []AST {
+	if depth <= 0 {
+		depth = -2
+	}
+	return flatten(tree, depth+1)
+}
+
+func flatten(tree AST, depth int) []AST {
+	if len(tree.Next) == 0 || depth == 0 {
+		return []AST{tree}
+	}
+	var f []AST
+	for _, n := range tree.Next {
+		f = append(f, flatten(n, depth-1)...)
+	}
+	return f
+}
+
+func Walk(tree AST, fn func(AST)) {
+	fn(tree)
+	Walks(tree.Next, fn)
+}
+
+func Walks(ns []AST, fn func(AST)) {
+	for _, n := range ns {
+		Walk(n, fn)
+	}
 }
