@@ -1,6 +1,6 @@
 # BNF
 
-Parse text using a [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form)-like notation.
+A Go library for parsing text using a [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form)-like grammar.
 
 [![playground](https://img.shields.io/badge/play-ground-blueviolet.svg?logo=github&labelColor=2b3137)](https://ofabricio.github.io/bnf/)
 
@@ -94,6 +94,62 @@ func main() {
 
 Homework: try adding support for whitespaces, numbers, booleans and null.
 
+# Introduction
+
+[BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form) is a notation used to describe
+the syntax of programming languages or other formal languages. It describes how to combine
+different symbols to produce a syntactically correct sequence of tokens.
+
+It consists of *terminal* and *nonterminal* symbols.
+Nonterminal symbols are identifiers that identify a set of terminal and/or nonterminal symbols.
+
+Consider this possible BNF for a math expression:
+
+```go
+expr = num '+' num
+num  = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+```
+
+Here the strings (`'+'`, `'0'`, ...) are terminal symbols; `num` is a nonterminal symbol.
+
+Now consider this expression as input:
+
+```
+6+5*(4+3)
+```
+
+By applying the previous BNF to the input above we get as result:
+
+```
+[Group]
+    [Ident] 6
+    [Ident] +
+    [Ident] 5
+```
+
+Not very exciting at first, but if we get a result it means the parsing succeeded
+and we have a syntactically correct sequence of tokens. Though we haven't exhausted the whole input here.
+
+Noteworthy points:
+
+- The result is always a flat tree like the above.
+  Functions are used to compose a tree; they are described in the next section.
+- The parser starts from upper left (`expr = num ...`) and goes rightward.
+- Terminal symbols emit tokens (a node in the tree).
+- When the parsing fails, a node of type `Error` is returned; it has the position where the parser failed.
+- There can be recursive calls, when a statement calls itself (see [Example 1](#example-1)).
+
+This is the struct returned by the `bnf.Parse(b, src)` function:
+
+```go
+type AST struct {
+    Type string // Identifies a group of tokens.
+    Text string // Token text.
+    Pos  int    // Token position.
+    Next []AST  // Children nodes.
+}
+```
+
 # Quick Reference
 
 | Operator | Description |
@@ -132,70 +188,6 @@ If defined they will be overridden.
 | `EOF` | Match if the scanner is at the end. |
 | `MORE` | Match if the scanner has more to scan. |
 | `SKIPLINE` | Skip a line. |
-
-# Introduction
-
-[BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form) is a notation used to describe
-the syntax of programming languages or other formal languages. It describes how to combine
-different symbols to produce a syntactically correct sequence of tokens.
-
-It consists of three components: (1) a set of *nonterminal* symbols; (2) a set of *terminal* symbols;
-and (3) rules for replacing nonterminal symbols with a sequence of symbols.
-
-These so-called "derivation rules" are written as `identifier = expression`, where `identifier`
-is a nonterminal symbol and `expression` consists of one or more sequences of either terminal
-or nonterminal symbols.
-
-Consider this possible BNF for a math expression:
-
-```go
-expr = num '+' num
-num  = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-```
-
-The strings `'...'` are terminal symbols and everything else is nonterminal symbol (or identifier).
-These identifiers will be replaced by the terminal symbols as the parser advances.
-
-Now consider this expression as input:
-
-```
-6+5*(4+3)
-```
-
-By applying the previous BNF to the input above we get as result:
-
-```
-[Group]
-    [Ident] 6
-    [Ident] +
-    [Ident] 5
-```
-
-Not very exciting at first, but if we get a result it means the parsing succeeded
-and we have a syntactically correct sequence of tokens. Though we haven't exhausted the whole input.
-
-Noteworthy points:
-
-- We always get a flat tree like the above as result.
-  Only by using functions we can get a real tree out of it; they are described in the next section.
-- The parser starts from upper left (`expr = num ...`) and goes rightward.
-- Every terminal symbol emits a token (a node in the tree).
-- When the parsing fails, a node of type `Error` is returned; it has the position where the parser failed.
-- There can be recursive calls, when a statement calls itself (see [Example 1](#example-1)).
-
-This is the struct returned by the `bnf.Parse(b, src)` function:
-
-```go
-type AST struct {
-    Type string // The type to identify a group of nodes.
-    Text string // The token.
-    Pos  int    // Position of the token.
-    Next []AST  // Children nodes.
-}
-```
-
-We can then parse that resulting tree to create something nicer, like a programming language;
-or we can simply use it to collect data from text like a (maybe more readable) regular expression.
 
 # Documentation
 
@@ -316,6 +308,108 @@ bnf.Print(v)
 // [Ident] c
 ```
 
+### Quantifiers
+
+Quantifiers have the same behavior as in a regular expression.
+
+- `?` matches zero or one token.
+- `*` matches zero or many tokens.
+- `+` matches one or many tokens.
+
+```go
+INP := `OneOneTwo`
+
+BNF := `
+    root = 'One'+
+`
+
+b := bnf.Compile(BNF)
+v := bnf.Parse(b, INP)
+
+bnf.Print(v)
+
+// Output:
+// [Group]
+//     [Ident] One
+//     [Ident] One
+```
+
+### Type
+
+Use `:type` suffix in any node to rename its type.
+
+```go
+INP := `2+3`
+
+BNF := `
+    root = num '+':Opr num
+     num = '\w+'r:Val
+`
+
+b := bnf.Compile(BNF)
+v := bnf.Parse(b, INP)
+
+bnf.Print(v)
+
+// Output:
+// [Group]
+//     [Val] 2
+//     [Opr] +
+//     [Val] 3
+```
+
+## Functions
+
+### ANYNOT
+
+This function matches any character that is not the argument.
+
+```go
+INP := `A`
+
+BNF := `
+    root = ANYNOT('B')
+`
+
+b := bnf.Compile(BNF)
+v := bnf.Parse(b, INP)
+
+bnf.Print(v)
+
+// Output:
+// [Ident] A
+```
+
+### FIND
+
+This function scans through the input text until a match is found and emit it.
+
+```go
+INP := `The standard chunk of Lorem Ipsum used since the 1500s
+is reproduced below for those interested. Sections 1.10.32 and
+1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also
+reproduced in their exact original form, accompanied by English
+versions from the 1914 translation by H. Rackham.`
+
+BNF := `
+    root = FIND(ver | num)+
+     num = '\d+'r
+     ver = MATCH(num '.' num '.' num)
+`
+
+b := bnf.Compile(BNF)
+v := bnf.Parse(b, INP)
+
+bnf.Print(v)
+
+// Output:
+// [Group]
+//     [Ident] 1500
+//     [Ident] 1.10.32
+//     [Ident] 1.10.33
+//     [Ident] 1914
+```
+
 ### GROUP
 
 By default all matching tokens are emitted separatelly, one node for each matching token.
@@ -425,15 +519,15 @@ bnf.Print(v)
 //     [Ident] 4+4
 ```
 
-### ANYNOT
+### REVERSE
 
-This function matches any character that is not the argument.
+This function reverses the token positions.
 
 ```go
-INP := `A`
+INP := `OneTwoThree`
 
 BNF := `
-    root = ANYNOT('B')
+    root = REVERSE('One' 'Two' 'Three')
 `
 
 b := bnf.Compile(BNF)
@@ -442,7 +536,10 @@ v := bnf.Parse(b, INP)
 bnf.Print(v)
 
 // Output:
-// [Ident] A
+// [Group]
+//     [Ident] Three
+//     [Ident] Two
+//     [Ident] One
 ```
 
 ### ROOT
@@ -467,19 +564,18 @@ bnf.Print(v)
 //     [Ident] 3
 ```
 
-### Quantifiers
+### SAVE and LOAD (Backreference)
 
-Quantifiers have the same behavior as in a regular expression.
+These functions work together to allow for Backreference.
 
-- `?` matches zero or one token.
-- `*` matches zero or many tokens.
-- `+` matches one or many tokens.
+In this example we guarantee that the closing tags have the same name of the opening tags.
 
 ```go
-INP := `OneOneTwo`
+INP := `<a>hello<b>world</b></a>`
 
 BNF := `
-    root = 'One'+
+    tag = GROUP( MATCH('<' SAVE(w) '>') ( w | tag )* MATCH('</' LOAD() '>') )
+      w = '\w+'r
 `
 
 b := bnf.Compile(BNF)
@@ -489,20 +585,25 @@ bnf.Print(v)
 
 // Output:
 // [Group]
-//     [Ident] One
-//     [Ident] One
+//     [Ident] <a>
+//     [Ident] hello
+//     [Group]
+//         [Ident] <b>
+//         [Ident] world
+//         [Ident] </b>
+//     [Ident] </a>
 ```
 
-### Type
+### SUM
 
-Use `:type` suffix in any node to rename its type.
+This function performs sum aggregation on numeric token values.
 
 ```go
-INP := `2+3`
+INP := `It is $2 for the tomatos and $3.55 for the potatos.`
 
 BNF := `
-    root = num '+':Opr num
-     num = '\w+'r:Val
+    root = SUM(FIND(v)+)
+       v = '$'i '\d+(\.\d+)?'r
 `
 
 b := bnf.Compile(BNF)
@@ -511,10 +612,7 @@ v := bnf.Parse(b, INP)
 bnf.Print(v)
 
 // Output:
-// [Group]
-//     [Val] 2
-//     [Opr] +
-//     [Val] 3
+// [Ident] 5.55
 ```
 
 ### TEXT
@@ -549,108 +647,4 @@ bnf.Print(v)
 //     [Ident] Default Value
 //     [Ident] Key3
 //     [Ident] Value3
-```
-
-### SAVE and LOAD (Backreference)
-
-These functions work together to allow for Backreference.
-
-In this example we guarantee that the closing tags have the same name of the opening tags.
-
-```go
-INP := `<a>hello<b>world</b></a>`
-
-BNF := `
-    tag = GROUP( MATCH('<' SAVE(w) '>') ( w | tag )* MATCH('</' LOAD() '>') )
-      w = '\w+'r
-`
-
-b := bnf.Compile(BNF)
-v := bnf.Parse(b, INP)
-
-bnf.Print(v)
-
-// Output:
-// [Group]
-//     [Ident] <a>
-//     [Ident] hello
-//     [Group]
-//         [Ident] <b>
-//         [Ident] world
-//         [Ident] </b>
-//     [Ident] </a>
-```
-
-### FIND
-
-This function scans through the input text until a match is found and emit it.
-
-```go
-INP := `The standard chunk of Lorem Ipsum used since the 1500s
-is reproduced below for those interested. Sections 1.10.32 and
-1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also
-reproduced in their exact original form, accompanied by English
-versions from the 1914 translation by H. Rackham.`
-
-BNF := `
-    root = FIND(ver | num)+
-     num = '\d+'r
-     ver = MATCH(num '.' num '.' num)
-`
-
-b := bnf.Compile(BNF)
-v := bnf.Parse(b, INP)
-
-bnf.Print(v)
-
-// Output:
-// [Group]
-//     [Ident] 1500
-//     [Ident] 1.10.32
-//     [Ident] 1.10.33
-//     [Ident] 1914
-```
-
-### REVERSE
-
-This function reverses the token positions.
-
-```go
-INP := `OneTwoThree`
-
-BNF := `
-    root = REVERSE('One' 'Two' 'Three')
-`
-
-b := bnf.Compile(BNF)
-v := bnf.Parse(b, INP)
-
-bnf.Print(v)
-
-// Output:
-// [Group]
-//     [Ident] Three
-//     [Ident] Two
-//     [Ident] One
-```
-
-### SUM
-
-This function performs sum aggregation on numeric token values.
-
-```go
-INP := `It is $2 for the tomatos and $3.55 for the potatos.`
-
-BNF := `
-    root = SUM(FIND(v)+)
-       v = '$'i '\d+(\.\d+)?'r
-`
-
-b := bnf.Compile(BNF)
-v := bnf.Parse(b, INP)
-
-bnf.Print(v)
-
-// Output:
-// [Ident] 5.55
 ```
