@@ -177,6 +177,7 @@ func (p *Parser) pos() int {
 
 var DefaultFuncs = map[string]Func{
 	"ANYNOT":  funcANYNOT,
+	"EXPR":    funcEXPR,
 	"FIND":    funcFIND,
 	"GROUP":   funcGROUP,
 	"JOIN":    funcJOIN,
@@ -201,6 +202,32 @@ func funcANYNOT(p *Parser, arg BNF, out *[]AST) bool {
 		return true
 	}
 	return false
+}
+
+func funcEXPR(p *Parser, arg BNF, out *[]AST) bool {
+	var v []AST
+	if p.ParseNode(arg, &v) {
+		expr := funcExprEvaluator(v[0])
+		p.EmitIdent(out, strconv.FormatFloat(expr, 'f', -1, 64))
+		return true
+	}
+	return false
+}
+
+func funcExprEvaluator(n AST) float64 {
+	switch n.Text {
+	case "+":
+		return funcExprEvaluator(n.Next[0]) + funcExprEvaluator(n.Next[1])
+	case "-":
+		return funcExprEvaluator(n.Next[0]) + funcExprEvaluator(n.Next[1])
+	case "*":
+		return funcExprEvaluator(n.Next[0]) * funcExprEvaluator(n.Next[1])
+	case "/":
+		return funcExprEvaluator(n.Next[0]) / funcExprEvaluator(n.Next[1])
+	default:
+		v, _ := strconv.ParseFloat(n.Text, 64)
+		return v
+	}
 }
 
 func funcFIND(p *Parser, arg BNF, out *[]AST) bool {

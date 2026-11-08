@@ -4,9 +4,8 @@ A Go library for parsing text using a [BNF](https://en.wikipedia.org/wiki/Backus
 
 [![playground](https://img.shields.io/badge/play-ground-blueviolet.svg?logo=github&labelColor=2b3137)](https://ofabricio.github.io/bnf/)
 
-## Note
-
-This is still in a very early, unusable state.
+> [!CAUTION]
+> This library is still in a very early stage.
 
 ## Install
 
@@ -168,6 +167,7 @@ type AST struct {
 | `FIND(a)` | Scan through the input text until a match is found and emit it. |
 | `REVERSE(a b)` | Reverse the token positions. |
 | `SUM(a)` | Sum aggregation. |
+| `EXPR(a)` | Evaluate a math expression. |
 
 **Note:** there is support for custom functions by adding them to `bnf.DefaultFuncs` map.
 
@@ -614,6 +614,44 @@ bnf.Print(v)
 // Output:
 // [Ident] 5.55
 ```
+
+### EXPR
+
+This function evaluates a mathematical expression.
+
+```go
+INP := `6+5*(4+3)*2`
+
+BNF := `
+    root = EXPR(expr)
+    expr = ROOT(term '+' expr) | term
+    term = ROOT(fact '*' term) | fact
+    fact = '('i expr ')'i | numb
+    numb = '\d+'r
+`
+
+b := bnf.Compile(BNF)
+v := bnf.Parse(b, INP)
+
+bnf.Print(v)
+
+// Output:
+// [Ident] 76
+```
+
+> [!NOTE]
+> The structure parsed by its argument must look like this:
+> ```
+> [Ident] +
+>     [Ident] 6
+>     [Ident] *
+>         [Ident] 5
+>         [Ident] *
+>             [Ident] +
+>                 [Ident] 4
+>                 [Ident] 3
+>             [Ident] 2
+> ```
 
 ### TEXT
 

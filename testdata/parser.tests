@@ -849,3 +849,20 @@ e = GROUP('('i (d e?)* ')'i)
     [Ident] 3.33
     [Ident] 8
     [Ident] 20
+
+
+[Test]
+Test EXPR().
+
+[Give]
+6+5*(4+3)*2
+
+[When]
+root = EXPR(expr)
+expr = ROOT(term '+' expr) | term
+term = ROOT(fact '*' term) | fact
+fact = '('i expr ')'i | numb
+numb = '\d+'r
+
+[Then]
+[Ident] 76
