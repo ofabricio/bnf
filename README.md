@@ -4,9 +4,6 @@ A Go library for parsing text using a [BNF](https://en.wikipedia.org/wiki/Backus
 
 [![playground](https://img.shields.io/badge/play-ground-blueviolet.svg?logo=github&labelColor=2b3137)](https://ofabricio.github.io/bnf/)
 
-> [!CAUTION]
-> This library is still in a very early stage.
-
 ## Install
 
 ```
@@ -49,11 +46,11 @@ func main() {
 }
 ```
 
-Homework: try adding support for whitespaces, minus, division and negative numbers.
+Exercise: Try adding support for whitespace, subtraction, division and negative numbers.
 
 ## Example 2
 
-Parsing a simple JSON that supports only strings and no whitespaces.
+Parsing a simplified JSON subset that supports only strings and no whitespace.
 [Go Playground](https://go.dev/play/p/HAr1ULSu8q3)
 
 ```go
@@ -91,7 +88,7 @@ func main() {
 }
 ```
 
-Homework: try adding support for whitespaces, numbers, booleans and null.
+Exercise: Try adding support for whitespace, numbers, booleans and null.
 
 # Introduction
 
@@ -100,7 +97,7 @@ the syntax of programming languages or other formal languages. It describes how 
 different symbols to produce a syntactically correct sequence of tokens.
 
 It consists of *terminal* and *nonterminal* symbols.
-Nonterminal symbols are identifiers that identify a set of terminal and/or nonterminal symbols.
+Nonterminal symbols are identifiers used to represent a set of terminal and/or nonterminal symbols.
 
 Consider this possible BNF for a math expression:
 
@@ -117,7 +114,7 @@ Now consider this expression as input:
 6+5*(4+3)
 ```
 
-By applying the previous BNF to the input above we get as result:
+By applying the previous BNF to the input above, we get the following result:
 
 ```
 [Group]
@@ -126,17 +123,17 @@ By applying the previous BNF to the input above we get as result:
     [Ident] 5
 ```
 
-Not very exciting at first, but if we get a result it means the parsing succeeded
-and we have a syntactically correct sequence of tokens. Though we haven't exhausted the whole input here.
+Not very exciting at first, but if we get a result, it means the parsing succeeded
+and we have a syntactically correct sequence of tokens, although we haven't consumed the entire input.
 
 Noteworthy points:
 
 - The result is always a flat tree like the above.
   Functions are used to compose a tree; they are described in the next section.
-- The parser starts from upper left (`expr = num ...`) and goes rightward.
-- Terminal symbols emit tokens (a node in the tree).
-- When the parsing fails, a node of type `Error` is returned; it has the position where the parser failed.
-- There can be recursive calls, when a statement calls itself (see [Example 1](#example-1)).
+- The parser starts from the top-left (`expr = num ...`) and moves to the right.
+- Terminal symbols emit a token (a node in the tree).
+- When parsing fails, a node of type `Error` is returned; it contains the position where the parser failed.
+- Recursive calls can also occur when a statement calls itself (see [Example 1](#example-1)).
 
 This is the struct returned by the `bnf.Parse(b, src)` function:
 
@@ -169,12 +166,13 @@ type AST struct {
 | `SUM(a)` | Sum aggregation. |
 | `EXPR(a)` | Evaluate a math expression. |
 
-**Note:** there is support for custom functions by adding them to `bnf.DefaultFuncs` map.
+> [!NOTE]
+> There is support for custom functions by adding them to the `bnf.DefaultFuncs` map.
 
 ### Default identifiers
 
 These identifiers don't need to be defined in the BNF.
-If defined they will be overridden.
+If defined, they will be overridden.
 
 | Identifier | Description |
 | --- | --- |
@@ -262,8 +260,8 @@ bnf.Print(v)
 ### And
 
 Any sequence of symbols is considered an And expression.
-For example `a b c` reads as match `a` AND `b` AND `c`.
-All of them need to succeed for the matching to continue.
+For example, `a b c` reads as matching `a` AND `b` AND `c`.
+All of them must succeed for matching to continue.
 `And` has precedence over [Or](#or).
 
 ```go
@@ -287,9 +285,9 @@ bnf.Print(v)
 
 ### Or
 
-Any sequence of symbols separeted by a `|` is considered an Or expression.
-For example `a | b | c` reads as match `a` OR `b` OR `c`.
-If one of them succeeds the matching continues.
+Any sequence of symbols separated by a `|` is considered an Or expression.
+For example, `a | b | c` reads as matching `a` OR `b` OR `c`.
+If one of them succeeds, matching continues.
 [And](#and) has precedence over `Or`.
 
 ```go
@@ -336,7 +334,7 @@ bnf.Print(v)
 
 ### Type
 
-Use `:type` suffix in any node to rename its type.
+Use the `:type` suffix on any node to rename its type.
 
 ```go
 INP := `2+3`
@@ -382,7 +380,7 @@ bnf.Print(v)
 
 ### FIND
 
-This function scans through the input text until a match is found and emit it.
+This function scans through the input text until a match is found and emits it.
 
 ```go
 INP := `The standard chunk of Lorem Ipsum used since the 1500s
@@ -412,7 +410,7 @@ bnf.Print(v)
 
 ### GROUP
 
-By default all matching tokens are emitted separatelly, one node for each matching token.
+By default, all matching tokens are emitted separately, one node for each matching token.
 This function groups these nodes together.
 
 Try removing the `GROUP` functions in the example below and see how the result changes.
@@ -446,14 +444,14 @@ bnf.Print(v)
 
 ### JOIN
 
-By default all matching tokens are emitted separatelly, one node for each matching token.
-This function joins these nodes into one. The order of the nodes matter.
+By default, all matching tokens are emitted separately, one node for each matching token.
+This function joins these nodes into one. The order of the nodes matters.
 
 In the example below, note:
-- How `1+1` are emitted separatelly by default.
+- How `1+1` are emitted separately by default.
 - How `2+2` are joined into one node.
-- How `3+3` are joined in a strange order due to the [ROOT](#root) function,
-  that changes the order of the nodes.
+- How `3+3` are joined in an unexpected order due to the [ROOT](#root) function,
+  which changes the order of the nodes.
 - How the `+` gets removed from `4+4` due to the [Ignore](#ignore) flag `i`.
 
 ```go
@@ -481,17 +479,16 @@ bnf.Print(v)
 
 ### MATCH
 
-By default all matching tokens are emitted separatelly, one node for each matching token.
-This function matches these nodes into one.
-It takes the text between the first and the last matching token,
-returning a node with it.
+By default, all matching tokens are emitted separately, one node for each matching token.
+This function matches a sequence of tokens as a single node.
+It takes the text between the first and last matching tokens and returns a single combined node.
 
 It is more efficient than [JOIN](#join), but some operators
-don't work with it, for example the [Ignore](#ignore) flag.
+don't work with it, such as the [Ignore](#ignore) flag.
 
 In the example below, note:
 
-- How `1+1` are emitted separatelly by default.
+- How `1+1` are emitted separately by default.
 - How `2+2` are joined into one node.
 - How `3+3` are joined into one node even though [ROOT](#root) changes the order of the nodes.
 - How the `+` is not removed from `4+4` even though [Ignore](#ignore) flag `i` is present.
@@ -544,7 +541,7 @@ bnf.Print(v)
 
 ### ROOT
 
-This function takes 3 arguments and when all of them match it makes the second argument a root node.
+This function takes 3 arguments, and when all of them match, it makes the second argument a root node.
 
 ```go
 INP := `2+3`
@@ -564,11 +561,11 @@ bnf.Print(v)
 //     [Ident] 3
 ```
 
-### SAVE and LOAD (Backreference)
+### SAVE and LOAD (backreference)
 
-These functions work together to allow for Backreference.
+These functions work together to allow for backreferences.
 
-In this example we guarantee that the closing tags have the same name of the opening tags.
+In this example, we guarantee that the closing tags have the same name as the opening tags.
 
 ```go
 INP := `<a>hello<b>world</b></a>`
@@ -596,10 +593,10 @@ bnf.Print(v)
 
 ### SUM
 
-This function performs sum aggregation on numeric token values.
+This function performs a sum aggregation on numeric token values.
 
 ```go
-INP := `It is $2 for the tomatos and $3.55 for the potatos.`
+INP := `It is $2 for the tomatoes and $3.55 for the potatoes.`
 
 BNF := `
     root = SUM(FIND(v)+)
@@ -655,7 +652,7 @@ bnf.Print(v)
 
 ### TEXT
 
-This function adds a text node in the tree; this is useful to add a default value.
+This function adds a text node to the tree, which is useful for adding default values.
 
 It accepts either a plain string argument `TEXT('example')` or no argument `TEXT()` to add an empty node.
 
