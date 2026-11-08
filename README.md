@@ -10,7 +10,7 @@ A Go library for parsing text using a [BNF](https://en.wikipedia.org/wiki/Backus
 go get github.com/ofabricio/bnf
 ```
 
-## Example 1
+## Example: Math Expression
 
 Parsing a simple expression. [Go Playground](https://go.dev/play/p/C6T8Dan8OFy)
 
@@ -48,7 +48,7 @@ func main() {
 
 Exercise: Try adding support for whitespace, subtraction, division and negative numbers.
 
-## Example 2
+## Example: JSON parsing
 
 Parsing a simplified JSON subset that supports only strings and no whitespace.
 [Go Playground](https://go.dev/play/p/HAr1ULSu8q3)
@@ -92,50 +92,57 @@ Exercise: Try adding support for whitespace, numbers, booleans and null.
 
 # Introduction
 
-[BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form) is a notation used to describe
-the syntax of programming languages or other formal languages. It describes how to combine
-different symbols to produce a syntactically correct sequence of tokens.
+This library provides a way to parse text by defining grammars using a
+[BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form)-inspired syntax directly in your Go code. 
 
-It consists of *terminal* and *nonterminal* symbols.
-Nonterminal symbols are identifiers used to represent a set of terminal and/or nonterminal symbols.
+### How It Works
 
-Consider this possible BNF for a math expression:
+A grammar is defined as a collection of rules where symbols combine to match text:
 
 ```go
 expr = num '+' num
 num  = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
 ```
 
-Here the strings (`'+'`, `'0'`, ...) are terminal symbols; `num` is a nonterminal symbol.
+A grammar contains **terminal symbols** (like literal strings `'+'` or regular expressions like `'\d+'r`) that match input text and emit tokens, and **non-terminal symbols** (like `expr` or `num`) that group rules together.
 
-Now consider this expression as input:
+When you apply the grammar above to this input text:
 
 ```
-6+5*(4+3)
+2+3
 ```
 
-By applying the previous BNF to the input above, we get the following result:
+By default, this produces a flat tree:
 
 ```
 [Group]
-    [Ident] 6
+    [Ident] 2
     [Ident] +
-    [Ident] 5
+    [Ident] 3
 ```
 
-Not very exciting at first, but if we get a result, it means the parsing succeeded
-and we have a syntactically correct sequence of tokens, although we haven't consumed the entire input.
+Then, using **built-in functions & operators** (like `ROOT()` and `GROUP()`),
+you can restructure the flat token stream into an articulated Abstract Syntax Tree (AST).
 
-Noteworthy points:
+For example:
 
-- The result is always a flat tree like the above.
-  Functions are used to compose a tree; they are described in the next section.
-- The parser starts from the top-left (`expr = num ...`) and moves to the right.
-- Terminal symbols emit a token (a node in the tree).
-- When parsing fails, a node of type `Error` is returned; it contains the position where the parser failed.
-- Recursive calls can also occur when a statement calls itself (see [Example 1](#example-1)).
+```go
+expr = ROOT(num '+' num)
+```
 
-This is the struct returned by the `bnf.Parse(b, src)` function:
+Transforms the tree into:
+
+```
+[Ident] +
+    [Ident] 2
+    [Ident] 3
+```
+
+From there, you can easily traverse the tree to evaluate, compile, collect or transform your data.
+
+### The AST Structure
+
+When you parse input text with `bnf.Parse(b, src)`, the parser returns a standard tree structure ready for traversal:
 
 ```go
 type AST struct {
@@ -153,7 +160,9 @@ type AST struct {
 | `'...'` | Match a plain text string. This emits a token. |
 | `'...'r` | The string is a Regular Expression. |
 | `'...'i` | Ignore the token (do not emit it). |
-| `ROOT(a b c)` | Make `b` a root token. |
+| `a b` | Matches `a` and `b` in sequence (AND). |
+| `a \| b` | Matches `a` or `b` (OR). |
+| `ROOT(a b c)` | Make `b` a root node. |
 | `GROUP(a)` | Group the tokens. |
 | `ANYNOT(a)` | Match any character that is not `a`. |
 | `JOIN(a)` | Join nodes into one. |
