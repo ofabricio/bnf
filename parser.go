@@ -96,8 +96,7 @@ func (p *Parser) ParseNode(bnf BNF, out *[]AST) bool {
 		}
 		return ok
 	case Ignore:
-		var v []AST
-		return p.ParseNode(bnf.Expr, &v)
+		return p.ParseNode(bnf.Expr, nil)
 	case Plain:
 		if m := p.cur.Mark(); p.cur.Match(bnf.Text) {
 			p.EmitIdent(out, p.cur.Text(m))
@@ -126,11 +125,15 @@ func (p *Parser) parseIdent(ident string, out *[]AST) bool {
 }
 
 func (p *Parser) EmitIdent(out *[]AST, text string) {
-	*out = append(*out, AST{Type: "Ident", Text: text, Pos: p.pos() - len(text)})
+	if out != nil {
+		*out = append(*out, AST{Type: "Ident", Text: text, Pos: p.pos() - len(text)})
+	}
 }
 
 func (p *Parser) Emit(out *[]AST, n ...AST) {
-	*out = append(*out, n...)
+	if out != nil {
+		*out = append(*out, n...)
+	}
 }
 
 // matchDefaultIdent match identifiers that do not emit a token.
@@ -193,8 +196,7 @@ var DefaultFuncs = map[string]Func{
 type Func func(p *Parser, arg BNF, out *[]AST) bool
 
 func funcANYNOT(p *Parser, arg BNF, out *[]AST) bool {
-	var v []AST
-	if m := p.cur.Mark(); p.ParseNode(arg, &v) {
+	if m := p.cur.Mark(); p.ParseNode(arg, nil) {
 		p.cur.Move(m)
 		return false
 	} else if p.cur.Next() {
@@ -262,8 +264,7 @@ func funcLOAD(p *Parser, arg BNF, out *[]AST) bool {
 }
 
 func funcMATCH(p *Parser, arg BNF, out *[]AST) bool {
-	var v []AST
-	if m := p.cur.Mark(); p.ParseNode(arg, &v) {
+	if m := p.cur.Mark(); p.ParseNode(arg, nil) {
 		p.EmitIdent(out, p.cur.Text(m))
 		return true
 	}
