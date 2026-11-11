@@ -53,7 +53,7 @@ func (c *Compiler) expr(out *BNF) bool {
 	var v BNF
 	for c.term(&v) {
 		or = append(or, v)
-		if !c.s.MatchChar("|") {
+		if !c.s.Match("|") {
 			break
 		}
 	}
@@ -85,7 +85,7 @@ func (c *Compiler) term(out *BNF) bool {
 
 func (c *Compiler) factor(out *BNF) bool {
 	c.ws()
-	if c.s.MatchChar("(") && c.expr(out) && c.s.MatchChar(")") || c.function(out) {
+	if c.s.Match("(") && c.expr(out) && c.s.Match(")") || c.function(out) {
 		c.typ(out)
 		c.quantifier(out)
 		c.ignoreFlag(out)
@@ -103,7 +103,7 @@ func (c *Compiler) function(out *BNF) bool {
 	if m := c.s.Mark(); c.matchRegex(reIden) {
 		name := c.s.Text(m)
 		var arg BNF
-		if c.s.MatchChar("(") && (c.expr(&arg) || true) && c.s.MatchChar(")") {
+		if c.s.Match("(") && (c.expr(&arg) || true) && c.s.Match(")") {
 			*out = Function{Name: name, Expr: arg}
 			return true
 		}
@@ -122,7 +122,7 @@ func (c *Compiler) quantifier(out *BNF) bool {
 }
 
 func (c *Compiler) typ(out *BNF) bool {
-	if c.s.MatchChar(":") {
+	if c.s.Match(":") {
 		var id Ident
 		if c.ident(&id) {
 			*out = Type{Ident: id, Expr: *out}
@@ -177,7 +177,7 @@ func (c *Compiler) plain(out *BNF) bool {
 }
 
 func (c *Compiler) regexFlag(out *BNF) bool {
-	if c.s.MatchChar("r") {
+	if c.s.Match("r") {
 		txt := "^" + (*out).(Plain).Text
 		*out = Regex{Text: txt, Regx: regexp.MustCompile(txt)}
 		return true
@@ -186,7 +186,7 @@ func (c *Compiler) regexFlag(out *BNF) bool {
 }
 
 func (c *Compiler) ignoreFlag(out *BNF) bool {
-	if c.s.MatchChar("i") {
+	if c.s.Match("i") {
 		*out = Ignore{Expr: *out}
 		return true
 	}
@@ -201,7 +201,7 @@ func (c *Compiler) matchRegex(re *regexp.Regexp) bool {
 }
 
 func (c *Compiler) stmtMarker() bool {
-	return c.ws() && c.s.MatchChar("=")
+	return c.ws() && c.s.Match("=")
 }
 
 func (c *Compiler) ws() bool {

@@ -145,19 +145,19 @@ func (p *Parser) matchDefaultIdent(ident string) bool {
 		return p.cur.More()
 	case "SKIPLINE":
 		p.cur.UntilChar("\n")
-		return p.cur.MatchChar("\n") || p.cur.Empty()
+		return p.cur.Match("\n") || p.cur.Empty()
 	case "ANY":
 		return p.cur.Next()
 	case "WS":
 		return p.cur.MatchFunc(unicode.IsSpace) // ' \t\r\n'
 	case "NL":
-		return p.cur.MatchChar("\n")
+		return p.cur.Match("\n")
 	case "SP":
-		return p.cur.MatchChar(" ")
+		return p.cur.Match(" ")
 	case "ST":
 		return p.cur.MatchChar(" \t")
 	case "TB":
-		return p.cur.MatchChar("\t")
+		return p.cur.Match("\t")
 	}
 	return false
 }
