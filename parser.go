@@ -253,7 +253,12 @@ func funcGROUP(p *Parser, arg BNF, out *[]AST) bool {
 func funcJOIN(p *Parser, arg BNF, out *[]AST) bool {
 	var v []AST
 	if p.ParseNode(arg, &v) {
-		p.EmitIdent(out, Join(v))
+		var sb strings.Builder
+		sb.Grow(64)
+		Walks(v, func(n AST) {
+			sb.WriteString(n.Text)
+		})
+		p.EmitIdent(out, sb.String())
 		return true
 	}
 	return false
@@ -328,15 +333,6 @@ func funcTEXT(p *Parser, arg BNF, out *[]AST) bool {
 		p.EmitIdent(out, "")
 	}
 	return true
-}
-
-func Join(tree []AST) string {
-	var out strings.Builder
-	for _, n := range tree {
-		out.WriteString(n.Text)
-		out.WriteString(Join(n.Next))
-	}
-	return out.String()
 }
 
 // Flatten returns a flat list of nodes. The
