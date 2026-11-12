@@ -1,12 +1,11 @@
 package bnf
 
 import (
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 	"unicode"
-
-	"github.com/ofabricio/scan"
 )
 
 func Parse(bnf Root, src string) AST {
@@ -14,12 +13,11 @@ func Parse(bnf Root, src string) AST {
 }
 
 func NewParser(bnf Root, src string) *Parser {
-	return &Parser{src: src, cur: scan.Bytes(src), bnf: bnf, fun: DefaultFuncs}
+	return &Parser{scn: Scanner{src: src}, bnf: bnf, fun: DefaultFuncs}
 }
 
 type Parser struct {
-	src string
-	cur scan.Bytes
+	scn Scanner
 	bnf Root
 	sav string
 	fun map[string]Func
@@ -28,7 +26,7 @@ type Parser struct {
 func (p *Parser) Parse() AST {
 	var v []AST
 	if !p.ParseNode(p.bnf, &v) {
-		return AST{Type: "Error", Pos: p.pos()}
+		return AST{Type: "Error", Pos: p.scn.Pos()}
 	}
 	if len(v) == 1 {
 		return v[0]
@@ -48,11 +46,11 @@ func (p *Parser) ParseNode(bnf BNF, out *[]AST) bool {
 		p.sav = s
 		return v
 	case ExprAnd:
-		m := p.cur.Mark()
+		m := p.scn.Mark()
 		var v []AST
 		for _, n := range bnf.And {
 			if !p.ParseNode(n, &v) {
-				p.cur.Move(m)
+				p.scn.Move(m)
 				return false
 			}
 		}
@@ -98,15 +96,13 @@ func (p *Parser) ParseNode(bnf BNF, out *[]AST) bool {
 	case Ignore:
 		return p.ParseNode(bnf.Expr, nil)
 	case Plain:
-		if m := p.cur.Mark(); p.cur.Match(bnf.Text) {
-			p.EmitIdent(out, p.cur.Text(m))
+		if m := p.scn.Mark(); p.scn.Match(bnf.Text) {
+			p.EmitIdent(out, p.scn.Text(m))
 			return true
 		}
 	case Regex:
-		if v := bnf.Regx.FindIndex(p.cur); v != nil {
-			m := p.cur.Mark()
-			p.cur.Advance(v[1])
-			p.EmitIdent(out, p.cur.Text(m))
+		if m := p.scn.Mark(); p.scn.Regex(bnf.Regx) {
+			p.EmitIdent(out, p.scn.Text(m))
 			return true
 		}
 	case Ident:
@@ -126,7 +122,7 @@ func (p *Parser) parseIdent(ident string, out *[]AST) bool {
 
 func (p *Parser) EmitIdent(out *[]AST, text string) {
 	if out != nil {
-		*out = append(*out, AST{Type: "Ident", Text: text, Pos: p.pos() - len(text)})
+		*out = append(*out, AST{Type: "Ident", Text: text, Pos: p.scn.Pos() - len(text)})
 	}
 }
 
@@ -140,24 +136,24 @@ func (p *Parser) Emit(out *[]AST, n ...AST) {
 func (p *Parser) matchDefaultIdent(ident string) bool {
 	switch ident {
 	case "EOF":
-		return p.cur.Empty()
+		return !p.scn.More()
 	case "MORE":
-		return p.cur.More()
+		return p.scn.More()
 	case "SKIPLINE":
-		p.cur.UntilChar("\n")
-		return p.cur.Match("\n") || p.cur.Empty()
+		p.scn.Regex(reLINE)
+		return p.scn.Match("\n") || !p.scn.More()
 	case "ANY":
-		return p.cur.Next()
+		return p.scn.Next()
 	case "WS":
-		return p.cur.MatchFunc(unicode.IsSpace) // ' \t\r\n'
+		return p.scn.MatchFunc(unicode.IsSpace)
 	case "NL":
-		return p.cur.Match("\n")
+		return p.scn.Match("\n")
 	case "SP":
-		return p.cur.Match(" ")
+		return p.scn.Match(" ")
 	case "ST":
-		return p.cur.MatchChar(" \t")
+		return p.scn.Match(" ") || p.scn.Match("\t")
 	case "TB":
-		return p.cur.Match("\t")
+		return p.scn.Match("\t")
 	}
 	return false
 }
@@ -166,16 +162,12 @@ func (p *Parser) matchDefaultIdent(ident string) bool {
 func (p *Parser) matchDefaultIdentThatEmit(ident string, out *[]AST) bool {
 	switch ident {
 	case "any":
-		if m := p.cur.Mark(); p.cur.Next() {
-			p.EmitIdent(out, p.cur.Text(m))
+		if m := p.scn.Mark(); p.scn.Next() {
+			p.EmitIdent(out, p.scn.Text(m))
 			return true
 		}
 	}
 	return false
-}
-
-func (p *Parser) pos() int {
-	return len(p.src) - len(p.cur)
 }
 
 var DefaultFuncs = map[string]Func{
@@ -196,11 +188,11 @@ var DefaultFuncs = map[string]Func{
 type Func func(p *Parser, arg BNF, out *[]AST) bool
 
 func funcANYNOT(p *Parser, arg BNF, out *[]AST) bool {
-	if m := p.cur.Mark(); p.ParseNode(arg, nil) {
-		p.cur.Move(m)
+	if m := p.scn.Mark(); p.ParseNode(arg, nil) {
+		p.scn.Move(m)
 		return false
-	} else if p.cur.Next() {
-		p.EmitIdent(out, p.cur.Text(m))
+	} else if p.scn.Next() {
+		p.EmitIdent(out, p.scn.Text(m))
 		return true
 	}
 	return false
@@ -233,7 +225,7 @@ func funcExprEvaluator(n AST) float64 {
 }
 
 func funcFIND(p *Parser, arg BNF, out *[]AST) bool {
-	for ; p.cur.More(); p.cur.Next() {
+	for ; p.scn.More(); p.scn.Next() {
 		if p.ParseNode(arg, out) {
 			return true
 		}
@@ -269,8 +261,8 @@ func funcLOAD(p *Parser, arg BNF, out *[]AST) bool {
 }
 
 func funcMATCH(p *Parser, arg BNF, out *[]AST) bool {
-	if m := p.cur.Mark(); p.ParseNode(arg, nil) {
-		p.EmitIdent(out, p.cur.Text(m))
+	if m := p.scn.Mark(); p.ParseNode(arg, nil) {
+		p.EmitIdent(out, p.scn.Text(m))
 		return true
 	}
 	return false
@@ -366,3 +358,5 @@ func Walks(ns []AST, fn func(AST)) {
 		Walk(n, fn)
 	}
 }
+
+var reLINE = regexp.MustCompile("^[^\n]*")

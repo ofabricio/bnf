@@ -3,8 +3,6 @@ package bnf
 import (
 	"regexp"
 	"strings"
-
-	"github.com/ofabricio/scan"
 )
 
 func Compile(bnf string) Root {
@@ -12,11 +10,11 @@ func Compile(bnf string) Root {
 }
 
 func NewCompiler(bnf string) *Compiler {
-	return &Compiler{s: scan.Bytes(bnf)}
+	return &Compiler{s: Scanner{src: bnf}}
 }
 
 type Compiler struct {
-	s scan.Bytes
+	s Scanner
 }
 
 func (c *Compiler) Compile() Root {
@@ -100,7 +98,7 @@ func (c *Compiler) factor(out *BNF) bool {
 }
 
 func (c *Compiler) function(out *BNF) bool {
-	if m := c.s.Mark(); c.matchRegex(reIden) {
+	if m := c.s.Mark(); c.s.Regex(reIDN) {
 		name := c.s.Text(m)
 		var arg BNF
 		if c.s.Match("(") && (c.expr(&arg) || true) && c.s.Match(")") {
@@ -114,7 +112,7 @@ func (c *Compiler) function(out *BNF) bool {
 
 func (c *Compiler) quantifier(out *BNF) bool {
 	c.ws()
-	if m := c.s.Mark(); c.s.MatchChar("*+?") {
+	if m := c.s.Mark(); c.s.Match("*") || c.s.Match("+") || c.s.Match("?") {
 		*out = Quantifier{Name: c.s.Text(m), Expr: *out}
 		return true
 	}
@@ -146,7 +144,7 @@ func (c *Compiler) value(out *BNF) bool {
 }
 
 func (c *Compiler) ident(out *Ident) bool {
-	if m := c.s.Mark(); c.matchRegex(reIden) {
+	if m := c.s.Mark(); c.s.Regex(reIDN) {
 		*out = Ident{Text: c.s.Text(m)}
 		return true
 	}
@@ -163,7 +161,7 @@ func (c *Compiler) text(out *BNF) bool {
 }
 
 func (c *Compiler) plain(out *BNF) bool {
-	if m := c.s.Mark(); c.matchRegex(reText) {
+	if m := c.s.Mark(); c.s.Regex(reTXT) {
 		t := c.s.Text(m)
 		t = t[1 : len(t)-1]
 		t = strings.NewReplacer(`\'`, `'`, `\\`, `\`).Replace(t)
@@ -193,20 +191,14 @@ func (c *Compiler) ignoreFlag(out *BNF) bool {
 	return false
 }
 
-func (c *Compiler) matchRegex(re *regexp.Regexp) bool {
-	if v := re.FindIndex(c.s); v != nil {
-		return c.s.Advance(v[1])
-	}
-	return false
-}
-
 func (c *Compiler) stmtMarker() bool {
 	return c.ws() && c.s.Match("=")
 }
 
 func (c *Compiler) ws() bool {
-	return c.s.WhileChar(" \t\n\r") || true
+	return c.s.Regex(reSPC) || true
 }
 
-var reText = regexp.MustCompile(`^'([^'\\]|\\.)*'`)
-var reIden = regexp.MustCompile(`^\w+`)
+var reTXT = regexp.MustCompile(`^'([^'\\]|\\.)*'`)
+var reIDN = regexp.MustCompile(`^\w+`)
+var reSPC = regexp.MustCompile(`^\s+`)

@@ -206,5 +206,5 @@ var testDataBNF = `
     root = GROUP(section section section section)+
  section = ws tag '\n'ri MATCH( ANYNOT(ws (tag | EOF))+ )
      tag = '[Test]'i | '[Give]'i | '[When]'i | '[Then]'i
-      ws = '\s*'ri
+      ws = WS*
 `
