@@ -140,8 +140,7 @@ func (p *Parser) matchDefaultIdent(ident string) bool {
 	case "MORE":
 		return p.scn.More()
 	case "SKIPLINE":
-		p.scn.Regex(reLINE)
-		return p.scn.Match("\n") || !p.scn.More()
+		return p.scn.Regex(reLINE)
 	case "ANY":
 		return p.scn.Next()
 	case "WS":
@@ -359,4 +358,4 @@ func Walks(ns []AST, fn func(AST)) {
 	}
 }
 
-var reLINE = regexp.MustCompile("^[^\n]*")
+var reLINE = regexp.MustCompile(".*\n?")
